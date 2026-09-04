@@ -1,0 +1,6 @@
+node_modules
+.nuxt
+.output
+coverage
+pnpm-lock.yaml
+app/types/components.d.ts
