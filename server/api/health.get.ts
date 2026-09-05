@@ -2,7 +2,9 @@ export default defineEventHandler(() => {
   const config = useRuntimeConfig();
   return {
     status: "ok",
-    services: {
+    msg: "成功",
+    data: {
+      app: "ok",
       mysqlConfigured: Boolean(
         config.mysql.host && config.mysql.database && config.mysql.user,
       ),

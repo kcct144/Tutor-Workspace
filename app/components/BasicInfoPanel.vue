@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import type { StudentRecord } from "~/types/students";
-
-defineProps<{ student: StudentRecord }>();
+import type { StudentDetail } from "../../types/api/students";
+defineProps<{ student: StudentDetail }>();
 </script>
 
 <template>
@@ -10,37 +9,37 @@ defineProps<{ student: StudentRecord }>();
       <div class="student-initial">{{ student.name.slice(0, 1) }}</div>
       <div>
         <h2>{{ student.name }}</h2>
-        <p>{{ student.school }}</p>
+        <p>{{ student.school ?? "—" }}</p>
       </div>
     </div>
     <dl class="basic-info-list">
       <div>
         <dt>年级</dt>
-        <dd>{{ student.grade }} · {{ student.className }}</dd>
+        <dd>{{ student.grade }} · {{ student.className ?? "—" }}</dd>
       </div>
       <div>
         <dt>学校</dt>
-        <dd>{{ student.school }}</dd>
+        <dd>{{ student.school ?? "—" }}</dd>
       </div>
       <div>
         <dt>性别</dt>
-        <dd>{{ student.gender }}</dd>
+        <dd>{{ student.gender ?? "—" }}</dd>
       </div>
       <div>
         <dt>到期时间</dt>
-        <dd>{{ student.expiryDate }}</dd>
+        <dd>后续接入</dd>
       </div>
       <div>
         <dt>建档时间</dt>
-        <dd>{{ student.createdAt }}</dd>
+        <dd>{{ student.enrolledAt ?? student.createdAt.slice(0, 10) }}</dd>
       </div>
       <div>
         <dt>主要监护人</dt>
-        <dd>{{ student.guardianName }}</dd>
+        <dd>{{ student.guardianName ?? "—" }}</dd>
       </div>
       <div>
         <dt>监护人联系方式</dt>
-        <dd>{{ student.guardianPhone }}</dd>
+        <dd>{{ student.guardianPhone ?? "—" }}</dd>
       </div>
       <div>
         <dt>当前状态</dt>
@@ -52,11 +51,11 @@ defineProps<{ student: StudentRecord }>();
       </div>
       <div>
         <dt>负责学管师</dt>
-        <dd>王老师</dd>
+        <dd>{{ student.owner?.name ?? "—" }}</dd>
       </div>
       <div>
         <dt>最近跟进</dt>
-        <dd>{{ student.lastFollowUp }}</dd>
+        <dd>后续接入</dd>
       </div>
       <div class="basic-info-wide">
         <dt>备注</dt>
@@ -64,13 +63,7 @@ defineProps<{ student: StudentRecord }>();
       </div>
       <div class="basic-info-wide">
         <dt>进行中的学习计划</dt>
-        <dd>
-          <div class="table-plan-tags">
-            <ATag v-for="plan in student.plans" :key="plan" class="plan-tag">{{
-              plan
-            }}</ATag>
-          </div>
-        </dd>
+        <dd>后续接入</dd>
       </div>
     </dl>
   </section>

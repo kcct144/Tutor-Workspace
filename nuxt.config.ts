@@ -8,7 +8,14 @@ export default defineNuxtConfig({
   modules: ["@nuxt/eslint", "@nuxtjs/tailwindcss"],
   css: ["ant-design-vue/dist/reset.css", "~/assets/css/tailwind.css"],
   runtimeConfig: {
-    mysql: { host: "", port: 3306, database: "", user: "", password: "" },
+    mysql: {
+      host: "",
+      port: 3306,
+      database: "",
+      user: "",
+      password: "",
+      ssl: false,
+    },
     redis: { host: "", port: 6379, password: "", db: 0, url: "" },
     public: { appUrl: "http://localhost:3000" },
   },

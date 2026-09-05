@@ -47,7 +47,9 @@ const route = useRoute();
             >任务分配</NuxtLink
           >
         </nav>
-        <div class="header-user"><span class="status-dot" />王老师</div>
+        <div class="header-user">
+          <span class="status-dot" />开发测试 · 无登录
+        </div>
       </div>
     </ALayoutHeader>
     <ALayoutContent class="app-content"><slot /></ALayoutContent>

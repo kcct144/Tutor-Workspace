@@ -6,6 +6,8 @@ interface Props {
   dataSource: Record<string, unknown>[];
   rowKey?: string;
   pageSize?: number;
+  current?: number;
+  total?: number;
   loading?: boolean;
   emptyText?: string;
 }
@@ -13,6 +15,8 @@ interface Props {
 withDefaults(defineProps<Props>(), {
   rowKey: "id",
   pageSize: 8,
+  current: undefined,
+  total: undefined,
   loading: false,
   emptyText: "暂无数据",
 });
@@ -30,7 +34,13 @@ function handleChange(pagination: TablePaginationConfig) {
     :data-source="dataSource"
     :row-key="rowKey"
     :loading="loading"
-    :pagination="{ pageSize, hideOnSinglePage: true, showSizeChanger: false }"
+    :pagination="{
+      pageSize,
+      current,
+      total,
+      hideOnSinglePage: true,
+      showSizeChanger: false,
+    }"
     :locale="{ emptyText }"
     class="base-data-table"
     @change="handleChange"
