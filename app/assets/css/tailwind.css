@@ -780,6 +780,279 @@ h1 span {
   color: #b75d4a;
   font-size: 12px;
 }
+.plans-page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 42px 36px 60px;
+}
+.plans-heading {
+  margin-bottom: 22px;
+}
+.plans-shell {
+  display: grid;
+  grid-template-columns: 286px minmax(0, 1fr);
+  min-height: 680px;
+  overflow: hidden;
+  border: 1px solid #e1e6df;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(38, 57, 43, 0.035);
+}
+.plans-sidebar {
+  border-right: 1px solid #e6ebe5;
+  background: #f8faf7;
+}
+.plans-sidebar-head {
+  padding: 19px 16px 14px;
+  border-bottom: 1px solid #e6ebe5;
+}
+.plans-sidebar-head > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 13px;
+}
+.plans-sidebar-head strong {
+  color: #304338;
+  font-size: 14px;
+}
+.plans-sidebar-head span {
+  color: #94a098;
+  font-size: 11px;
+}
+.plans-sidebar-head .ant-input {
+  height: 32px;
+  border-color: #dce4da;
+  border-radius: 7px;
+  background: #fff;
+  font-size: 12px;
+}
+.plans-list {
+  padding: 8px;
+}
+.plan-list-item {
+  display: block;
+  width: 100%;
+  padding: 13px 11px 12px;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: 7px;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+.plan-list-item:hover {
+  background: #edf3eb;
+}
+.plan-list-item.active {
+  border-left-color: #5e8a67;
+  background: #e6f0e3;
+}
+.plan-list-item strong,
+.plan-list-item span,
+.plan-list-item time {
+  display: block;
+}
+.plan-list-item strong {
+  overflow: hidden;
+  color: #304338;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.plan-list-item span {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-top: 5px;
+  color: #718079;
+  font-size: 11px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.plan-list-item time {
+  margin-top: 8px;
+  color: #a0aaa2;
+  font-size: 10px;
+}
+.plans-empty,
+.plans-document-empty {
+  padding: 32px 18px;
+  color: #9ba69e;
+  font-size: 12px;
+  text-align: center;
+}
+.plan-document-panel {
+  min-width: 0;
+  background: #fff;
+}
+.plan-document-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 34px 22px;
+  border-bottom: 1px solid #edf0ec;
+}
+.plan-document-kicker {
+  margin: 0 0 8px;
+  color: #8b9b90;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+.plan-document-head h2 {
+  margin: 0;
+  color: #26362d;
+  font-size: 25px;
+  letter-spacing: -0.035em;
+}
+.plan-document-head p:last-child {
+  max-width: 620px;
+  margin: 8px 0 0;
+  color: #849088;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.plan-document-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 8px;
+  padding-top: 4px;
+}
+.plan-document-actions .ant-btn {
+  height: 32px;
+  border-radius: 7px;
+  font-size: 12px;
+}
+.plan-save-message {
+  color: #6d8b73;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.plan-rendered-content,
+.plan-editor-wrap {
+  max-width: 840px;
+  padding: 31px 38px 48px;
+}
+.plan-rendered-content {
+  color: #435149;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.plan-rendered-content h1,
+.plan-rendered-content h2,
+.plan-rendered-content h3 {
+  margin: 0 0 13px;
+  color: #293a30;
+  letter-spacing: -0.025em;
+}
+.plan-rendered-content h1 {
+  font-size: 26px;
+}
+.plan-rendered-content h2 {
+  padding-top: 13px;
+  font-size: 19px;
+}
+.plan-rendered-content h3 {
+  font-size: 16px;
+}
+.plan-rendered-content p {
+  margin: 0 0 15px;
+}
+.plan-rendered-content ul,
+.plan-rendered-content ol {
+  margin: 0 0 18px;
+  padding-left: 22px;
+}
+.plan-rendered-content li {
+  margin: 5px 0;
+  padding-left: 4px;
+}
+.plan-rendered-content blockquote {
+  margin: 19px 0;
+  padding: 10px 15px;
+  border-left: 3px solid #a9c6a2;
+  color: #67766d;
+  background: #f5f8f3;
+}
+.plan-rendered-content code {
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: #42614a;
+  background: #edf3eb;
+  font-size: 12px;
+}
+.plan-rendered-content table {
+  width: 100%;
+  margin: 18px 0 22px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.plan-rendered-content th,
+.plan-rendered-content td {
+  padding: 9px 11px;
+  border: 1px solid #e4eae2;
+  text-align: left;
+}
+.plan-rendered-content th {
+  color: #496050;
+  background: #f5f8f3;
+  font-weight: 650;
+}
+.plan-check-item {
+  list-style: none;
+}
+.plan-check {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  margin-right: 7px;
+  border: 1px solid #cbd8ca;
+  border-radius: 4px;
+  color: #fff;
+  background: #fff;
+  font-size: 10px;
+  vertical-align: -2px;
+}
+.plan-check.checked {
+  border-color: #7aa477;
+  background: #7aa477;
+}
+.plan-editor-wrap {
+  max-width: none;
+  padding-bottom: 28px;
+}
+.plan-editor {
+  display: block;
+  width: 100%;
+  min-height: 520px;
+  padding: 18px;
+  resize: vertical;
+  border: 1px solid #dce5da;
+  border-radius: 9px;
+  outline: none;
+  color: #35473c;
+  background: #fbfcfa;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  line-height: 1.75;
+}
+.plan-editor:focus {
+  border-color: #8eb48a;
+  box-shadow: 0 0 0 3px rgba(142, 180, 138, 0.14);
+}
+.plan-editor-hint {
+  display: block;
+  margin-top: 9px;
+  color: #98a59b;
+  font-size: 11px;
+}
 @media (max-width: 760px) {
   .app-header {
     padding: 0 16px;
@@ -889,5 +1162,39 @@ h1 span {
   }
   .record-date-range {
     width: 100%;
+  }
+  .plans-page {
+    padding: 28px 16px 42px;
+  }
+  .plans-shell {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: auto;
+  }
+  .plans-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid #e6ebe5;
+  }
+  .plans-list {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 8px;
+  }
+  .plan-list-item {
+    flex: 0 0 220px;
+  }
+  .plan-document-head {
+    flex-direction: column;
+    padding: 23px 20px 18px;
+  }
+  .plan-document-actions {
+    width: 100%;
+  }
+  .plan-document-actions .ant-btn {
+    flex: 0 0 auto;
+  }
+  .plan-rendered-content,
+  .plan-editor-wrap {
+    padding: 24px 20px 34px;
   }
 }
