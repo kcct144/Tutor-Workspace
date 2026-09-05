@@ -10,7 +10,7 @@
 
 1. 基本信息区：固定展示学生姓名、年级/班级、学校、性别、到期时间、建档时间、主要监护人、监护人联系方式、备注、进行中的学习计划，并保留当前状态、负责学管师、最近跟进。
 2. 学习记录区：记录学生的学习表现，分类为“缺、补、强”；支持筛选、关键词搜索、分页和新增记录。
-3. 任务列表区：展示当前学生任务；本版使用 mock 数据，支持状态筛选、关键词搜索和分页，不确定任务真实数据模型。
+3. 任务列表区：展示当前学生任务；本版使用 mock 数据，支持状态筛选、关键词搜索和分页，任务定义与分配模型详见 `docs/design/task-data-model.md`。
 
 ### 基本信息字段
 
@@ -46,7 +46,7 @@
 | 学习记录分类  | `LearningRecord.category`：缺 / 补 / 强                                       |
 | 可复用表格    | 复用 `app/components/BaseDataTable.vue`                                       |
 | 学习记录 mock | `app/mocks/data/student-detail.json` + `app/mocks/services/student-detail.ts` |
-| 任务 mock     | 同一 detail mock 文件，真实任务表结构待定                                     |
+| 任务 mock     | 同一 detail mock 文件；任务定义与分配模型详见任务数据设计                     |
 
 ## 待总指挥确认的问题
 

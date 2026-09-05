@@ -1053,6 +1053,164 @@ h1 span {
   color: #98a59b;
   font-size: 11px;
 }
+.task-operation-message {
+  margin: -9px 0 12px;
+  color: #6d8b73;
+  font-size: 12px;
+}
+.task-title-cell {
+  min-width: 0;
+}
+.task-title-cell strong,
+.task-title-cell span {
+  display: block;
+}
+.task-title-cell strong {
+  overflow: hidden;
+  color: #304338;
+  font-size: 13px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-title-cell span {
+  overflow: hidden;
+  margin-top: 4px;
+  color: #8a968e;
+  font-size: 11px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-count-cell {
+  color: #5e7565;
+  font-size: 12px;
+}
+.task-definition-status {
+  border: 0;
+  border-radius: 5px;
+  font-size: 11px;
+}
+.task-definition-启用 {
+  color: #4e7657;
+  background: #e4f1e1;
+}
+.task-definition-草稿 {
+  color: #8c7348;
+  background: #f6eedb;
+}
+.task-definition-停用 {
+  color: #89928c;
+  background: #eef0ed;
+}
+.task-action-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+.task-action-group .table-action-button {
+  padding: 0 4px;
+  font-size: 12px;
+}
+.table-action-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 4px;
+  color: #52745a;
+  font-size: 12px;
+  line-height: 1.5;
+  text-decoration: none;
+}
+.table-action-link:hover {
+  color: #2e5039;
+}
+.task-form .ant-input,
+.task-form .ant-select {
+  width: 100%;
+}
+.assignment-drawer-heading h2 {
+  margin: 0;
+  color: #2f4035;
+  font-size: 20px;
+  letter-spacing: -0.025em;
+}
+.assignment-drawer-heading p {
+  margin: 8px 0 0;
+  color: #7d8b82;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.assignment-drawer-meta {
+  display: flex;
+  gap: 18px;
+  margin: 20px 0 12px;
+  color: #65776b;
+  font-size: 12px;
+}
+.assignment-drawer-hint {
+  margin-top: 14px;
+  color: #9aa49d;
+  font-size: 11px;
+}
+.task-assignment-toolbar .student-filter-control {
+  min-width: 126px;
+}
+.task-assignment-task-filter {
+  min-width: 170px;
+}
+.assignment-status-tag {
+  border: 0;
+  border-radius: 5px;
+  font-size: 11px;
+}
+.assignment-status-待完成 {
+  color: #8b754c;
+  background: #f6eedb;
+}
+.assignment-status-进行中 {
+  color: #4e7657;
+  background: #e4f1e1;
+}
+.assignment-status-已完成 {
+  color: #6d7f72;
+  background: #edf2ec;
+}
+.assignment-status-已跳过,
+.assignment-status-已取消 {
+  color: #929b95;
+  background: #f0f1ef;
+}
+.assignment-due-cell {
+  display: inline-flex;
+  flex-direction: column;
+  color: #5f7165;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.assignment-due-cell small {
+  margin-top: 3px;
+  color: #93a097;
+  font-size: 10px;
+}
+.assignment-due-cell.overdue {
+  color: #b75d4a;
+  font-weight: 650;
+}
+.assignment-due-cell.overdue small {
+  color: #b75d4a;
+}
+.assignment-due-cell.today {
+  color: #a16f3e;
+  font-weight: 650;
+}
+.task-assignment-form .ant-select,
+.task-assignment-form .ant-picker {
+  width: 100%;
+}
+.task-assignment-form .ant-select-multiple .ant-select-selector {
+  min-height: 34px;
+}
 @media (max-width: 760px) {
   .app-header {
     padding: 0 16px;
@@ -1196,5 +1354,17 @@ h1 span {
   .plan-rendered-content,
   .plan-editor-wrap {
     padding: 24px 20px 34px;
+  }
+  .tasks-page .students-toolbar .student-filter-control {
+    min-width: 110px;
+  }
+  .task-action-group {
+    flex-wrap: wrap;
+  }
+  .task-assignment-toolbar .student-filter-control {
+    min-width: 0;
+  }
+  .task-assignment-task-filter {
+    min-width: 0;
   }
 }

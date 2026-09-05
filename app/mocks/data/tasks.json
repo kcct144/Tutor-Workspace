@@ -1,0 +1,230 @@
+{
+  "tasks": [
+    {
+      "id": "task-001",
+      "ownerUserId": "u-001",
+      "title": "完成一元二次方程练习",
+      "description": "完成讲义第 3 节练习，并标记不会的题目。",
+      "subject": "数学",
+      "status": "启用",
+      "createdAt": "2026-08-20",
+      "updatedAt": "2026-09-04"
+    },
+    {
+      "id": "task-002",
+      "ownerUserId": "u-001",
+      "title": "订正周测错题",
+      "description": "订正本周测验中的错题，补充错误原因。",
+      "subject": "数学",
+      "status": "启用",
+      "createdAt": "2026-08-21",
+      "updatedAt": "2026-09-03"
+    },
+    {
+      "id": "task-003",
+      "ownerUserId": "u-001",
+      "title": "上传今日学习反馈",
+      "description": "用 3—5 句话记录今天的学习内容、完成情况和卡点。",
+      "subject": "通用",
+      "status": "启用",
+      "createdAt": "2026-08-22",
+      "updatedAt": "2026-09-02"
+    },
+    {
+      "id": "task-004",
+      "ownerUserId": "u-001",
+      "title": "背诵英语短语 Unit 4",
+      "description": "完成 Unit 4 高频短语背诵，并在下次课前自测。",
+      "subject": "英语",
+      "status": "启用",
+      "createdAt": "2026-08-23",
+      "updatedAt": "2026-09-01"
+    },
+    {
+      "id": "task-005",
+      "ownerUserId": "u-001",
+      "title": "完成几何证明练习",
+      "description": "完成三角形全等证明练习 2 道，写出完整证明步骤。",
+      "subject": "数学",
+      "status": "启用",
+      "createdAt": "2026-08-25",
+      "updatedAt": "2026-08-30"
+    },
+    {
+      "id": "task-006",
+      "ownerUserId": "u-001",
+      "title": "整理本周课堂笔记",
+      "description": "整理本周课堂笔记，补全公式和例题结论。",
+      "subject": "通用",
+      "status": "草稿",
+      "createdAt": "2026-08-28",
+      "updatedAt": "2026-08-28"
+    },
+    {
+      "id": "task-007",
+      "ownerUserId": "u-001",
+      "title": "完成一次函数图像练习",
+      "description": "完成一次函数图像专项练习，并圈出需要讲解的题目。",
+      "subject": "数学",
+      "status": "启用",
+      "createdAt": "2026-08-29",
+      "updatedAt": "2026-09-01"
+    },
+    {
+      "id": "task-008",
+      "ownerUserId": "u-001",
+      "title": "完成阅读理解限时训练",
+      "description": "完成一篇阅读理解，记录每道题的定位依据。",
+      "subject": "英语",
+      "status": "停用",
+      "createdAt": "2026-08-15",
+      "updatedAt": "2026-08-26"
+    },
+    {
+      "id": "task-009",
+      "ownerUserId": "u-001",
+      "title": "复习受力分析基础",
+      "description": "复习受力分析基本步骤，完成配套例题。",
+      "subject": "物理",
+      "status": "启用",
+      "createdAt": "2026-08-30",
+      "updatedAt": "2026-09-02"
+    },
+    {
+      "id": "task-010",
+      "ownerUserId": "u-001",
+      "title": "完成错题归因卡",
+      "description": "从本周错题中选择 3 道，分别填写错因和改进方法。",
+      "subject": "通用",
+      "status": "启用",
+      "createdAt": "2026-09-01",
+      "updatedAt": "2026-09-04"
+    }
+  ],
+  "assignments": [
+    {
+      "id": "assign-001",
+      "taskId": "task-001",
+      "studentId": "s-001",
+      "assignedBy": "u-001",
+      "status": "进行中",
+      "assignedAt": "2026-09-03",
+      "dueDate": "2026-09-06",
+      "updatedAt": "2026-09-04"
+    },
+    {
+      "id": "assign-002",
+      "taskId": "task-001",
+      "studentId": "s-003",
+      "assignedBy": "u-001",
+      "status": "已完成",
+      "assignedAt": "2026-09-01",
+      "dueDate": "2026-09-04",
+      "completedAt": "2026-09-03",
+      "updatedAt": "2026-09-03"
+    },
+    {
+      "id": "assign-003",
+      "taskId": "task-002",
+      "studentId": "s-001",
+      "assignedBy": "u-001",
+      "status": "待完成",
+      "assignedAt": "2026-09-04",
+      "dueDate": "2026-09-07",
+      "updatedAt": "2026-09-04"
+    },
+    {
+      "id": "assign-004",
+      "taskId": "task-002",
+      "studentId": "s-002",
+      "assignedBy": "u-001",
+      "status": "已完成",
+      "assignedAt": "2026-09-01",
+      "dueDate": "2026-09-04",
+      "completedAt": "2026-09-03",
+      "updatedAt": "2026-09-03"
+    },
+    {
+      "id": "assign-005",
+      "taskId": "task-003",
+      "studentId": "s-001",
+      "assignedBy": "u-001",
+      "status": "待完成",
+      "assignedAt": "2026-09-05",
+      "dueDate": "2026-09-05",
+      "updatedAt": "2026-09-05"
+    },
+    {
+      "id": "assign-006",
+      "taskId": "task-003",
+      "studentId": "s-004",
+      "assignedBy": "u-001",
+      "status": "进行中",
+      "assignedAt": "2026-09-04",
+      "dueDate": "2026-09-05",
+      "updatedAt": "2026-09-05"
+    },
+    {
+      "id": "assign-007",
+      "taskId": "task-004",
+      "studentId": "s-001",
+      "assignedBy": "u-001",
+      "status": "待完成",
+      "assignedAt": "2026-09-04",
+      "dueDate": "2026-09-06",
+      "updatedAt": "2026-09-04"
+    },
+    {
+      "id": "assign-008",
+      "taskId": "task-004",
+      "studentId": "s-005",
+      "assignedBy": "u-001",
+      "status": "进行中",
+      "assignedAt": "2026-09-02",
+      "dueDate": "2026-09-07",
+      "updatedAt": "2026-09-04"
+    },
+    {
+      "id": "assign-009",
+      "taskId": "task-005",
+      "studentId": "s-003",
+      "assignedBy": "u-001",
+      "status": "已完成",
+      "assignedAt": "2026-08-30",
+      "dueDate": "2026-09-02",
+      "completedAt": "2026-09-02",
+      "updatedAt": "2026-09-02"
+    },
+    {
+      "id": "assign-010",
+      "taskId": "task-007",
+      "studentId": "s-002",
+      "assignedBy": "u-001",
+      "status": "待完成",
+      "assignedAt": "2026-09-05",
+      "dueDate": "2026-09-08",
+      "updatedAt": "2026-09-05"
+    },
+    {
+      "id": "assign-011",
+      "taskId": "task-009",
+      "studentId": "s-008",
+      "assignedBy": "u-001",
+      "status": "已完成",
+      "assignedAt": "2026-09-01",
+      "dueDate": "2026-09-05",
+      "completedAt": "2026-09-04",
+      "updatedAt": "2026-09-04"
+    },
+    {
+      "id": "assign-012",
+      "taskId": "task-010",
+      "studentId": "s-006",
+      "assignedBy": "u-001",
+      "status": "待完成",
+      "assignedAt": "2026-09-05",
+      "dueDate": "2026-09-10",
+      "updatedAt": "2026-09-05"
+    }
+  ]
+}

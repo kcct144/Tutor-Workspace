@@ -37,8 +37,14 @@ const route = useRoute();
           <NuxtLink
             to="/tasks"
             class="nav-item"
-            :class="{ active: route.path.startsWith('/tasks') }"
+            :class="{ active: route.path === '/tasks' }"
             >任务列表</NuxtLink
+          >
+          <NuxtLink
+            to="/tasks/assignments"
+            class="nav-item"
+            :class="{ active: route.path.startsWith('/tasks/assignments') }"
+            >任务分配</NuxtLink
           >
         </nav>
         <div class="header-user"><span class="status-dot" />王老师</div>
