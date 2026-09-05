@@ -1,0 +1,84 @@
+[
+  {
+    "id": "s-001",
+    "name": "林晓晓",
+    "grade": "初二",
+    "className": "3班",
+    "expiresInDays": 3,
+    "plans": ["数学提升", "期中复习"],
+    "tasks": [
+      { "id": "t-001", "title": "完成一元二次方程练习", "completed": false },
+      { "id": "t-002", "title": "订正周测错题", "completed": true },
+      { "id": "t-003", "title": "上传今日学习反馈", "completed": false },
+      { "id": "t-004", "title": "背诵英语短语 Unit 4", "completed": false }
+    ]
+  },
+  {
+    "id": "s-002",
+    "name": "周子涵",
+    "grade": "初三",
+    "className": "1班",
+    "expiresInDays": 7,
+    "plans": ["中考冲刺"],
+    "tasks": [
+      { "id": "t-005", "title": "物理模拟卷选择题", "completed": true },
+      { "id": "t-006", "title": "整理化学实验笔记", "completed": true },
+      { "id": "t-007", "title": "完成数学二轮复习", "completed": true },
+      { "id": "t-008", "title": "与家长同步周计划", "completed": true },
+      { "id": "t-009", "title": "完成英语听力训练", "completed": true },
+      { "id": "t-010", "title": "提交错题本照片", "completed": false },
+      { "id": "t-011", "title": "确认周末课程安排", "completed": false },
+      { "id": "t-024", "title": "完成历史材料题训练", "completed": false },
+      { "id": "t-025", "title": "整理本周课堂笔记", "completed": false }
+    ]
+  },
+  {
+    "id": "s-003",
+    "name": "陈思远",
+    "grade": "高一",
+    "className": "5班",
+    "plans": ["学业适应", "数学基础"],
+    "tasks": [
+      { "id": "t-012", "title": "函数章节知识梳理", "completed": true },
+      { "id": "t-013", "title": "完成物理错题复盘", "completed": true },
+      { "id": "t-014", "title": "阅读材料并写摘要", "completed": false }
+    ]
+  },
+  {
+    "id": "s-004",
+    "name": "赵一鸣",
+    "grade": "初一",
+    "className": "2班",
+    "expiresInDays": 1,
+    "plans": ["学习习惯养成"],
+    "tasks": [
+      { "id": "t-015", "title": "整理书桌与错题本", "completed": false },
+      { "id": "t-016", "title": "完成语文阅读打卡", "completed": false },
+      { "id": "t-017", "title": "预习有理数章节", "completed": false }
+    ]
+  },
+  {
+    "id": "s-005",
+    "name": "许安然",
+    "grade": "高二",
+    "className": "4班",
+    "plans": ["高考基础夯实", "英语提分"],
+    "tasks": [
+      { "id": "t-018", "title": "完成英语阅读两篇", "completed": true },
+      { "id": "t-019", "title": "整理本周词汇", "completed": false },
+      { "id": "t-020", "title": "制定周末学习时段", "completed": false }
+    ]
+  },
+  {
+    "id": "s-006",
+    "name": "沈嘉禾",
+    "grade": "初二",
+    "className": "6班",
+    "plans": ["数学提升"],
+    "tasks": [
+      { "id": "t-021", "title": "完成几何证明练习", "completed": false },
+      { "id": "t-022", "title": "订正月考错题", "completed": false },
+      { "id": "t-023", "title": "提交学习反馈", "completed": false }
+    ]
+  }
+]

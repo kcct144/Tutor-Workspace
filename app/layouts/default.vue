@@ -1,39 +1,20 @@
 <template>
   <ALayout class="app-shell">
     <ALayoutHeader class="app-header">
-      <NuxtLink to="/" class="brand">学管师工作台</NuxtLink>
-      <span class="environment-label">开发环境</span>
+      <div class="header-inner">
+        <NuxtLink to="/" class="brand-mark"
+          ><span class="brand-symbol">学</span
+          ><span>学管师工作台</span></NuxtLink
+        >
+        <nav class="main-nav" aria-label="主导航">
+          <NuxtLink to="/" class="nav-item active">工作台</NuxtLink>
+          <NuxtLink to="/students" class="nav-item">学员管理</NuxtLink>
+          <NuxtLink to="/plans" class="nav-item">学习计划</NuxtLink>
+          <NuxtLink to="/tasks" class="nav-item">任务列表</NuxtLink>
+        </nav>
+        <div class="header-user"><span class="status-dot" />王老师</div>
+      </div>
     </ALayoutHeader>
-    <ALayoutContent class="app-content">
-      <slot />
-    </ALayoutContent>
+    <ALayoutContent class="app-content"><slot /></ALayoutContent>
   </ALayout>
 </template>
-
-<style scoped>
-.app-shell {
-  min-height: 100vh;
-  background: #f5f7fa;
-}
-.app-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: #001529;
-}
-.brand {
-  color: #fff;
-  font-size: 18px;
-  font-weight: 600;
-}
-.environment-label {
-  color: #91caff;
-  font-size: 13px;
-}
-.app-content {
-  max-width: 1120px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 32px 24px;
-}
-</style>

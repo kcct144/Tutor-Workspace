@@ -5,8 +5,8 @@ export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   ssr: false,
   devtools: { enabled: true },
-  modules: ["@nuxt/eslint"],
-  css: ["ant-design-vue/dist/reset.css"],
+  modules: ["@nuxt/eslint", "@nuxtjs/tailwindcss"],
+  css: ["ant-design-vue/dist/reset.css", "~/assets/css/tailwind.css"],
   runtimeConfig: {
     mysql: { host: "", port: 3306, database: "", user: "", password: "" },
     redis: { host: "", port: 6379, password: "", db: 0, url: "" },
