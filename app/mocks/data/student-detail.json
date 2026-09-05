@@ -1,0 +1,104 @@
+{
+  "records": [
+    {
+      "id": "r-001",
+      "studentId": "s-001",
+      "category": "强",
+      "content": "主动完成拓展题，并能复述一元二次方程的解题步骤。",
+      "occurredOn": "2026-09-04",
+      "authorName": "王老师"
+    },
+    {
+      "id": "r-002",
+      "studentId": "s-001",
+      "category": "缺",
+      "content": "几何证明中辅助线意识较弱，需要加强审题和图形分析。",
+      "occurredOn": "2026-09-03",
+      "authorName": "王老师"
+    },
+    {
+      "id": "r-003",
+      "studentId": "s-001",
+      "category": "补",
+      "content": "已完成上周错题订正，能够说清错误原因。",
+      "occurredOn": "2026-09-02",
+      "authorName": "王老师"
+    },
+    {
+      "id": "r-004",
+      "studentId": "s-001",
+      "category": "缺",
+      "content": "英语短语记忆不稳定，听写时有 4 处遗漏。",
+      "occurredOn": "2026-09-01",
+      "authorName": "王老师"
+    },
+    {
+      "id": "r-005",
+      "studentId": "s-001",
+      "category": "强",
+      "content": "按计划完成当天学习反馈，时间管理比上周有改善。",
+      "occurredOn": "2026-08-30",
+      "authorName": "王老师"
+    },
+    {
+      "id": "r-006",
+      "studentId": "s-001",
+      "category": "补",
+      "content": "补充复习一次函数图像，课堂练习正确率提升。",
+      "occurredOn": "2026-08-29",
+      "authorName": "王老师"
+    },
+    {
+      "id": "r-007",
+      "studentId": "s-001",
+      "category": "强",
+      "content": "能主动整理本周错题，并标记易错知识点。",
+      "occurredOn": "2026-08-28",
+      "authorName": "王老师"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "dt-001",
+      "studentId": "s-001",
+      "title": "完成一元二次方程练习",
+      "status": "待完成",
+      "dueDate": "2026-09-05"
+    },
+    {
+      "id": "dt-002",
+      "studentId": "s-001",
+      "title": "订正周测错题",
+      "status": "已完成",
+      "dueDate": "2026-09-04"
+    },
+    {
+      "id": "dt-003",
+      "studentId": "s-001",
+      "title": "上传今日学习反馈",
+      "status": "待完成",
+      "dueDate": "2026-09-05"
+    },
+    {
+      "id": "dt-004",
+      "studentId": "s-001",
+      "title": "背诵英语短语 Unit 4",
+      "status": "待完成",
+      "dueDate": "2026-09-06"
+    },
+    {
+      "id": "dt-005",
+      "studentId": "s-001",
+      "title": "完成几何证明练习",
+      "status": "已完成",
+      "dueDate": "2026-09-03"
+    },
+    {
+      "id": "dt-006",
+      "studentId": "s-001",
+      "title": "整理本周课堂笔记",
+      "status": "待完成",
+      "dueDate": "2026-09-07"
+    }
+  ]
+}
