@@ -11,6 +11,7 @@ export interface HomeStudent {
   className: string;
   expiresInDays?: number;
   plans: string[];
+  subjects: string[];
   tasks: HomeTask[];
 }
 export interface HomeSummary {

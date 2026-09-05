@@ -201,7 +201,7 @@ h1 span {
 .student-card {
   position: relative;
   min-width: 0;
-  height: 370px;
+  height: 390px;
   padding: 21px 20px 18px;
   border: 1px solid #e1e6df;
   border-radius: 12px;
@@ -277,6 +277,16 @@ h1 span {
   border-radius: 4px;
   color: #52715a;
   background: #edf5eb;
+  font-size: 11px;
+  line-height: 18px;
+}
+.subject-tag {
+  margin: 0 !important;
+  padding: 2px 7px;
+  border: 0;
+  border-radius: 4px;
+  color: #4d6f79;
+  background: #eaf3f3;
   font-size: 11px;
   line-height: 18px;
 }
@@ -431,6 +441,52 @@ h1 span {
   background: transparent;
   box-shadow: none;
 }
+.contracts-toolbar {
+  flex-wrap: wrap;
+}
+.contract-search {
+  width: 220px;
+}
+.contracts-toolbar .contract-filter {
+  width: 112px;
+}
+.contract-date-cell {
+  color: #657269;
+  font-variant-numeric: tabular-nums;
+}
+.contract-status-tag {
+  margin: 0 !important;
+  border: 0;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 20px;
+}
+.contract-status-生效中 {
+  color: #55765b;
+  background: #edf5eb;
+}
+.contract-status-未开始 {
+  color: #6f7894;
+  background: #eef1fb;
+}
+.contract-status-已到期,
+.contract-status-已用完 {
+  color: #8b918c;
+  background: #f0f2ef;
+}
+.table-action-button {
+  padding: 0;
+  color: #55785b;
+  font-size: 12px;
+}
+.table-action-button:hover {
+  color: #274a30 !important;
+}
+.contract-form .ant-select,
+.contract-date-picker,
+.contract-number-input {
+  width: 100%;
+}
 .table-panel {
   overflow: hidden;
   border: 1px solid #e1e6df;
@@ -476,6 +532,11 @@ h1 span {
   color: #8b958e;
 }
 .table-plan-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.table-subject-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
@@ -776,6 +837,15 @@ h1 span {
   }
   .student-filter-control {
     flex: 1;
+  }
+  .contracts-toolbar .contract-search {
+    width: 100%;
+  }
+  .contracts-toolbar .student-filter-control {
+    min-width: 0;
+  }
+  .contracts-toolbar .primary-green-button {
+    flex: 0 0 auto;
   }
   .reset-button {
     flex: 0 0 auto;

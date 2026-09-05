@@ -23,6 +23,12 @@ const route = useRoute();
             >学员管理</NuxtLink
           >
           <NuxtLink
+            to="/contracts"
+            class="nav-item"
+            :class="{ active: route.path.startsWith('/contracts') }"
+            >合同管理</NuxtLink
+          >
+          <NuxtLink
             to="/plans"
             class="nav-item"
             :class="{ active: route.path.startsWith('/plans') }"

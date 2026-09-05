@@ -16,6 +16,7 @@ declare module 'vue' {
     ADatePicker: typeof import('ant-design-vue/es/date-picker/dayjs')['default']
     AEmpty: typeof import('ant-design-vue/es')['Empty']
     AInput: typeof import('ant-design-vue/es')['Input']
+    AInputNumber: typeof import('ant-design-vue/es')['InputNumber']
     ALayout: typeof import('ant-design-vue/es')['Layout']
     ALayoutContent: typeof import('ant-design-vue/es')['LayoutContent']
     ALayoutHeader: typeof import('ant-design-vue/es')['LayoutHeader']

@@ -113,9 +113,12 @@ function completedTaskCount(student: HomeStudent) {
                 {{ student.expiresInDays }} 天后到期
               </span>
             </h2>
-            <span class="grade-label"
-              >{{ student.grade }} · {{ student.className }}</span
-            >
+            <span class="grade-label">
+              {{ student.grade
+              }}<template v-if="student.subjects.length">
+                · {{ student.subjects.join("、") }}</template
+              >
+            </span>
           </div>
           <span class="task-progress"
             >{{ student.tasks.filter((task) => task.completed).length }}/{{

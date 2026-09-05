@@ -14,6 +14,7 @@ export interface StudentRecord {
   guardianPhone: string;
   note: string;
   plans: string[];
+  subjects: string[];
   completedTasks: number;
   totalTasks: number;
   lastFollowUp: string;

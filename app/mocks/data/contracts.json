@@ -1,0 +1,146 @@
+[
+  {
+    "id": "c-001",
+    "studentId": "s-001",
+    "subject": "数学",
+    "contractType": "month",
+    "startDate": "2026-06-15",
+    "endDate": "2026-09-08",
+    "makeupLessons": 1
+  },
+  {
+    "id": "c-002",
+    "studentId": "s-001",
+    "subject": "英语",
+    "contractType": "half_year",
+    "startDate": "2026-07-01",
+    "endDate": "2026-09-08",
+    "makeupLessons": 0
+  },
+  {
+    "id": "c-003",
+    "studentId": "s-002",
+    "subject": "数学",
+    "contractType": "half_year",
+    "startDate": "2026-05-20",
+    "endDate": "2026-09-12",
+    "makeupLessons": 2
+  },
+  {
+    "id": "c-004",
+    "studentId": "s-002",
+    "subject": "物理",
+    "contractType": "year",
+    "startDate": "2026-06-01",
+    "endDate": "2027-05-31",
+    "makeupLessons": 0
+  },
+  {
+    "id": "c-005",
+    "studentId": "s-003",
+    "subject": "数学",
+    "contractType": "year",
+    "startDate": "2026-07-03",
+    "endDate": "2027-07-02",
+    "makeupLessons": 0
+  },
+  {
+    "id": "c-006",
+    "studentId": "s-003",
+    "subject": "物理",
+    "contractType": "month",
+    "startDate": "2026-07-10",
+    "endDate": "2026-10-05",
+    "makeupLessons": 1
+  },
+  {
+    "id": "c-007",
+    "studentId": "s-004",
+    "subject": "语文",
+    "contractType": "month",
+    "startDate": "2026-08-16",
+    "endDate": "2026-09-30",
+    "makeupLessons": 0
+  },
+  {
+    "id": "c-008",
+    "studentId": "s-005",
+    "subject": "英语",
+    "contractType": "half_year",
+    "startDate": "2026-04-28",
+    "endDate": "2026-11-18",
+    "makeupLessons": 3
+  },
+  {
+    "id": "c-009",
+    "studentId": "s-005",
+    "subject": "数学",
+    "contractType": "year",
+    "startDate": "2026-05-01",
+    "endDate": "2027-04-30",
+    "makeupLessons": 0
+  },
+  {
+    "id": "c-010",
+    "studentId": "s-006",
+    "subject": "数学",
+    "contractType": "half_year",
+    "startDate": "2026-03-11",
+    "endDate": "2026-08-25",
+    "makeupLessons": 0
+  },
+  {
+    "id": "c-011",
+    "studentId": "s-007",
+    "subject": "数学",
+    "contractType": "year",
+    "startDate": "2026-05-06",
+    "endDate": "2027-05-05",
+    "makeupLessons": 1
+  },
+  {
+    "id": "c-012",
+    "studentId": "s-007",
+    "subject": "英语",
+    "contractType": "month",
+    "startDate": "2026-05-12",
+    "endDate": "2026-09-22",
+    "makeupLessons": 0
+  },
+  {
+    "id": "c-013",
+    "studentId": "s-008",
+    "subject": "物理",
+    "contractType": "half_year",
+    "startDate": "2026-07-22",
+    "endDate": "2026-10-12",
+    "makeupLessons": 0
+  },
+  {
+    "id": "c-014",
+    "studentId": "s-009",
+    "subject": "语文",
+    "contractType": "month",
+    "startDate": "2026-02-14",
+    "endDate": "2026-08-18",
+    "makeupLessons": 2
+  },
+  {
+    "id": "c-015",
+    "studentId": "s-008",
+    "subject": "物理",
+    "contractType": "lessons",
+    "attendedLessons": 8,
+    "totalLessons": 10,
+    "makeupLessons": 1
+  },
+  {
+    "id": "c-016",
+    "studentId": "s-006",
+    "subject": "数学",
+    "contractType": "lessons",
+    "attendedLessons": 2,
+    "totalLessons": 5,
+    "makeupLessons": 0
+  }
+]

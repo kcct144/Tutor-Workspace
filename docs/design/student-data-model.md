@@ -8,7 +8,7 @@
 
 ## 设计范围
 
-本版只确定学管师与学生的基础关系，并为学生详情页的学习记录提供数据模型。任务和学习计划涉及更多业务规则，本版只保留 mock 展示，不确定真实表结构。
+本版确定学管师、学生、合同和学习记录的基础关系。合同是学生科目与服务期限的唯一业务来源；任务和学习计划涉及更多业务规则，本版只保留 mock 展示，不确定真实表结构。
 
 ## 实体关系
 
@@ -16,6 +16,7 @@
 user 1 ──────── N students
 user 1 ──────── N student_learning_records（记录人）
 students 1 ──── N student_learning_records
+students 1 ──── N contracts
 ```
 
 ## `user` 表（学管师）
@@ -41,7 +42,6 @@ students 1 ──── N student_learning_records
 | class_name        | VARCHAR(32)     | NULL     | 班级                                 |
 | school            | VARCHAR(128)    | NULL     | 学校                                 |
 | gender            | VARCHAR(8)      | NULL     | 性别                                 |
-| expiry_date       | DATE            | NULL     | 服务或学习计划到期日期               |
 | enrolled_at       | DATE            | NULL     | 建档时间                             |
 | guardian_name     | VARCHAR(64)     | NULL     | 主要监护人                           |
 | guardian_phone    | VARCHAR(32)     | NULL     | 监护人联系方式，需按隐私策略保护     |
@@ -52,6 +52,28 @@ students 1 ──── N student_learning_records
 | updated_at        | DATETIME        | NOT NULL | 更新时间                             |
 
 建议索引：`idx_students_owner_status (owner_user_id, status)`、`idx_students_grade (grade)`、`idx_students_last_follow_up (last_follow_up_at)`。
+
+学生服务到期时间不再作为 `students` 的独立业务来源，接口层应从该学生合同的 `end_date` 聚合返回（当前原型取合同结束时间最新的一条）。这样可以避免学生表中的到期时间与合同不一致。
+
+## `contracts` 表（学生合同）
+
+一个学生可以有多个合同；每个合同只对应一个科目和一种固定合同类型，不建立单独的学生—科目关系表。合同类型暂定为月卡、半年卡、年卡、按课时。
+
+| 字段             | 类型            | 约束     | 说明                                                            |
+| ---------------- | --------------- | -------- | --------------------------------------------------------------- |
+| id               | BIGINT UNSIGNED | PK       | 合同主键                                                        |
+| student_id       | BIGINT UNSIGNED | NOT NULL | 关联 `students.id`                                              |
+| subject          | VARCHAR(64)     | NOT NULL | 本合同对应的科目                                                |
+| contract_type    | VARCHAR(16)     | NOT NULL | `month` 月卡；`half_year` 半年卡；`year` 年卡；`lessons` 按课时 |
+| start_date       | DATE            | NULL     | 月卡/半年卡/年卡必填；按课时是否有有效期待确认                  |
+| end_date         | DATE            | NULL     | 月卡/半年卡/年卡必填；按课时是否有有效期待确认                  |
+| attended_lessons | INT UNSIGNED    | NULL     | 按课时合同已上课时数；其他类型为空                              |
+| total_lessons    | INT UNSIGNED    | NULL     | 按课时合同总课时数；其他类型为空                                |
+| makeup_lessons   | INT UNSIGNED    | NOT NULL | 通用需补课数，默认 0                                            |
+| created_at       | DATETIME        | NOT NULL | 创建时间                                                        |
+| updated_at       | DATETIME        | NOT NULL | 更新时间                                                        |
+
+建议索引：`idx_contracts_student_dates (student_id, start_date, end_date)`、`idx_contracts_type (contract_type)`。月卡、半年卡、年卡必须有起止日期；按课时合同必须有已上课时数和总课时数。合同类型为固定枚举值，后续新增类型需同步更新产品规则、校验与迁移。
 
 ## `student_learning_records` 表（学习记录）
 
@@ -74,4 +96,7 @@ students 1 ──── N student_learning_records
 - 一个学生是否允许多个学管师共同负责，当前按单一 `owner_user_id` 设计。
 - 学习记录是否允许编辑、删除，以及是否需要软删除和操作审计。
 - 年级和记录分类是否使用字典表，而不是代码枚举。
+- 合同是否需要合同编号、金额、签署状态、付款状态、附件等字段。
+- 一个学生存在多份合同覆盖同一科目时，科目标签是否去重，以及到期时间取最新合同还是当前有效合同的最晚日期。
+- 科目是否需要独立字典表；当前原型直接存合同 `subject` 文本，不建立学生—科目中间表。
 - 任务、学习计划与学生的关系、归属和状态规则暂不设计。

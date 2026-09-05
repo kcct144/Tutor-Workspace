@@ -29,6 +29,7 @@ const columns: TableColumnType[] = [
   { title: "学校", dataIndex: "school", key: "school", width: 240 },
   { title: "班级", key: "class", width: 110 },
   { title: "学习计划", key: "plans", width: 260 },
+  { title: "科目", key: "subjects", width: 170 },
   { title: "状态", dataIndex: "status", key: "status", width: 110 },
   { title: "到期时间", dataIndex: "expiryDate", key: "expiryDate", width: 140 },
   { title: "操作", key: "action", width: 100, fixed: "right" },
@@ -96,6 +97,17 @@ function resetFilters() {
               <ATag v-for="plan in record.plans" :key="plan" class="plan-tag">{{
                 plan
               }}</ATag>
+            </div>
+          </template>
+          <template v-else-if="column.key === 'subjects'">
+            <div class="table-subject-tags">
+              <ATag
+                v-for="subject in record.subjects"
+                :key="subject"
+                class="subject-tag"
+              >
+                {{ subject }}
+              </ATag>
             </div>
           </template>
           <template v-else-if="column.key === 'status'">
