@@ -3,3 +3,4 @@ CREATE TABLE schema_migrations (
   checksum CHAR(64) NOT NULL,
   applied_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

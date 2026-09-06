@@ -1,0 +1,2 @@
+# Migration checksums are computed from exact bytes. Preserve LF on Windows.
+database/migrations/*.sql text eol=lf

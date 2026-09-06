@@ -39,7 +39,7 @@ const taskColumns: TableColumnType[] = [
     <template v-else-if="student">
       <div class="detail-context-row">
         <span class="prototype-note"
-          >S1 · 基本信息已接入；学习记录、任务与其他关联后续接入</span
+          >S2 · 基本信息与合同聚合已接入；学习记录、计划和任务后续接入</span
         >
       </div>
       <div class="detail-layout">

@@ -13,6 +13,9 @@ import {
 
 const api = vi.hoisted(() => ({ getStudents: vi.fn(), getStudent: vi.fn() }));
 vi.mock("~/services/students", () => api);
+vi.mock("../../app/composables/useStudentInvalidation", () => ({
+  useStudentInvalidation: () => {},
+}));
 afterEach(() => vi.resetAllMocks());
 const empty = { items: [], total: 0, page: 1, pageSize: 8 };
 async function flush() {

@@ -8,6 +8,7 @@ interface Props {
   pageSize?: number;
   current?: number;
   total?: number;
+  scrollX?: number;
   loading?: boolean;
   emptyText?: string;
 }
@@ -17,6 +18,7 @@ withDefaults(defineProps<Props>(), {
   pageSize: 8,
   current: undefined,
   total: undefined,
+  scrollX: undefined,
   loading: false,
   emptyText: "暂无数据",
 });
@@ -34,6 +36,7 @@ function handleChange(pagination: TablePaginationConfig) {
     :data-source="dataSource"
     :row-key="rowKey"
     :loading="loading"
+    :scroll="scrollX ? { x: scrollX } : undefined"
     :pagination="{
       pageSize,
       current,

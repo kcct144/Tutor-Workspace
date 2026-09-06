@@ -5,6 +5,7 @@ CREATE TABLE users (
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   CONSTRAINT chk_users_name CHECK (CHAR_LENGTH(TRIM(name)) > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE students (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   owner_user_id BIGINT UNSIGNED NULL,
@@ -28,3 +29,4 @@ CREATE TABLE students (
   INDEX idx_students_grade_status (grade, status, id),
   INDEX idx_students_owner (owner_user_id, id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

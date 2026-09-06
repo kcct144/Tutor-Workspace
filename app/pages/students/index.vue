@@ -39,7 +39,9 @@ const columns: TableColumnType[] = [
           学员管理 <span>{{ total }}</span>
         </h1>
       </div>
-      <span class="prototype-note">S1 · 学生基础已接入，其他模块后续接入</span>
+      <span class="prototype-note"
+        >S2 · 学生基础与合同聚合已接入，学习计划后续接入</span
+      >
     </section>
     <section class="students-toolbar">
       <AInput
@@ -89,12 +91,19 @@ const columns: TableColumnType[] = [
           <span v-if="column.key === 'class'" class="muted-cell">{{
             record.className ?? "—"
           }}</span>
-          <span
-            v-else-if="
-              ['plans', 'subjects', 'expiryDate'].includes(String(column.key))
-            "
-            class="muted-cell"
+          <span v-else-if="column.key === 'plans'" class="muted-cell"
             >后续接入</span
+          >
+          <span v-else-if="column.key === 'expiryDate'">{{
+            record.expiryDate ?? "—"
+          }}</span>
+          <span v-else-if="column.key === 'subjects'"
+            ><ATag
+              v-for="subject in record.subjects"
+              :key="subject"
+              class="subject-tag"
+              >{{ subject }}</ATag
+            ><span v-if="!record.subjects.length">—</span></span
           >
           <span v-else-if="column.key === 'school'">{{
             record.school ?? "—"

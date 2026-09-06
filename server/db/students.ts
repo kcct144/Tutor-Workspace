@@ -8,6 +8,7 @@ import type {
 } from "../../types/api/students.ts";
 import { studentFilter } from "./student-query.ts";
 import { ApiError } from "../utils/api.ts";
+import { studentContractAggregates } from "./contracts.ts";
 
 interface StudentRow extends RowDataPacket {
   id: string;
@@ -75,6 +76,12 @@ export async function listStudents(
       " ORDER BY s.id DESC LIMIT ? OFFSET ?",
     [...filter.values, query.pageSize, (query.page - 1) * query.pageSize],
   );
+  const aggregates = options
+    ? undefined
+    : await studentContractAggregates(
+        connection,
+        rows.map((row) => String(row.id)),
+      );
   return {
     items: options
       ? rows.map((row) => ({
@@ -82,7 +89,10 @@ export async function listStudents(
           name: row.name,
           grade: row.grade,
         }))
-      : rows.map(toStudentListItem),
+      : rows.map((row) => ({
+          ...toStudentListItem(row),
+          ...aggregates?.get(String(row.id)),
+        })),
     total: Number(counts[0]?.total ?? 0),
     page: query.page,
     pageSize: query.pageSize,
@@ -97,5 +107,6 @@ export async function findStudent(
     [id],
   );
   if (!rows[0]) throw new ApiError(404, "NOT_FOUND", "未找到学生。");
-  return toStudentDetail(rows[0]);
+  const aggregates = await studentContractAggregates(connection, [id]);
+  return { ...toStudentDetail(rows[0]), ...aggregates.get(id) };
 }

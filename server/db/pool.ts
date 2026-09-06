@@ -37,6 +37,7 @@ export async function inTransaction<T>(
   await connection.beginTransaction();
   try {
     const result = await work();
+    await assertApprovedDatabase(connection);
     await connection.commit();
     return result;
   } catch (error) {

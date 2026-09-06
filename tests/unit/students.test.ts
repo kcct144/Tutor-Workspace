@@ -15,6 +15,9 @@ import {
 } from "../../server/db/student-query";
 import { findStudent, listStudents } from "../../server/db/students";
 import { apiResponse, ApiError } from "../../server/utils/api";
+vi.mock("../../server/db/contracts.ts", () => ({
+  studentContractAggregates: async () => new Map(),
+}));
 
 afterEach(() => vi.unstubAllGlobals());
 

@@ -26,6 +26,7 @@ await runDatabaseCommand(async (connection) => {
         await connection.rollback();
         return;
       }
+      await assertApprovedDatabase(connection);
       const [actor] = await connection.execute(
         "INSERT INTO users (name) VALUES (?)",
         ["S1合成演示老师"],
@@ -34,6 +35,7 @@ await runDatabaseCommand(async (connection) => {
       const grades = ["初一", "初二", "初三", "高一", "高二"];
       const statuses = ["在读", "待分配", "已结课"];
       for (let index = 1; index <= 12; index++) {
+        await assertApprovedDatabase(connection);
         const status = statuses[(index - 1) % statuses.length];
         await connection.execute(
           "INSERT INTO students (owner_user_id, name, grade, class_name, school, gender, enrolled_at, guardian_name, guardian_phone, note, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -52,6 +54,7 @@ await runDatabaseCommand(async (connection) => {
           ],
         );
       }
+      await assertApprovedDatabase(connection);
       await connection.commit();
       console.log("已显式装载12名合成演示学生。");
       console.log("演示人员ID（请手工填写本机 DEV_ACTOR_ID）：" + actorId);

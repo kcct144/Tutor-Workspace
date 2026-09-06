@@ -11,7 +11,7 @@ if (
 }
 await runDatabaseCommand(async (connection) => {
   const [migrations] = await connection.query(
-    "SELECT version FROM schema_migrations ORDER BY version LIMIT 3",
+    "SELECT version FROM schema_migrations WHERE version IN ('000_schema_migrations','001_students') ORDER BY version LIMIT 2",
   );
   assert.deepEqual(
     migrations.map((row) => row.version),

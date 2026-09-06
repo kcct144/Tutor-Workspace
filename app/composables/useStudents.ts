@@ -1,6 +1,7 @@
 import { computed, onScopeDispose, ref, watch } from "vue";
 import { getStudents, getStudent } from "~/services/students";
 import { ServiceError } from "~/services/http";
+import { useStudentInvalidation } from "./useStudentInvalidation";
 import type {
   StudentDetail,
   StudentListItem,
@@ -64,6 +65,7 @@ export function useStudents() {
     { immediate: true },
   );
   onScopeDispose(() => controller?.abort());
+  useStudentInvalidation(refresh);
   function reset() {
     keyword.value = "";
     grade.value = "全部";
@@ -126,5 +128,6 @@ export function useStudentDetail(id: () => string) {
     { immediate: true },
   );
   onScopeDispose(() => controller?.abort());
+  useStudentInvalidation(refresh);
   return { student, loading, error, notFound, refresh };
 }

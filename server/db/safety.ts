@@ -22,6 +22,18 @@ export async function assertApprovedDatabase(
 
 /** Only the S1, unqualified CREATE TABLE statements are accepted. */
 export function parseS1Migration(sql: string): string[] {
+  return parseMigration(
+    sql,
+    ["schema_migrations", "users", "students"],
+    ["users"],
+  );
+}
+
+export function parseMigration(
+  sql: string,
+  tables: readonly string[],
+  allowedReferences: readonly string[],
+): string[] {
   if (/--|\/\*|#/.test(sql)) throw new Error("迁移文件不允许注释或隐藏语句。");
   const statements = sql
     .split(";")
@@ -30,18 +42,18 @@ export function parseS1Migration(sql: string): string[] {
   if (!statements.length) throw new Error("迁移文件为空。");
   for (const statement of statements) {
     if (
-      !/^CREATE TABLE (schema_migrations|users|students)\s*\(/i.test(
-        statement,
+      !tables.includes(
+        /^CREATE TABLE (\w+)\s*\(/i.exec(statement)?.[1] ?? "",
       ) ||
       /\.|\b(USE|DROP|ALTER|INSERT|UPDATE|DELETE|TRUNCATE|SELECT|DATABASE|SCHEMA|LIKE|RENAME)\b/i.test(
         statement.replace(/ON (DELETE|UPDATE) RESTRICT/gi, ""),
       )
     ) {
-      throw new Error("迁移超出S1建表范围。");
+      throw new Error("迁移超出已批准建表范围。");
     }
     const references = [...statement.matchAll(/REFERENCES\s+(\w+)/gi)];
-    if (references.some((match) => match[1] !== "users"))
-      throw new Error("迁移引用超出S1范围。");
+    if (references.some((match) => !allowedReferences.includes(match[1]!)))
+      throw new Error("迁移引用超出已批准范围。");
   }
   return statements;
 }

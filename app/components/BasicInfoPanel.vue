@@ -27,7 +27,7 @@ defineProps<{ student: StudentDetail }>();
       </div>
       <div>
         <dt>到期时间</dt>
-        <dd>后续接入</dd>
+        <dd>{{ student.expiryDate ?? "—" }}</dd>
       </div>
       <div>
         <dt>建档时间</dt>
@@ -60,6 +60,17 @@ defineProps<{ student: StudentDetail }>();
       <div class="basic-info-wide">
         <dt>备注</dt>
         <dd>{{ student.note || "暂无" }}</dd>
+      </div>
+      <div class="basic-info-wide">
+        <dt>有效合同科目</dt>
+        <dd>
+          <ATag
+            v-for="subject in student.subjects"
+            :key="subject"
+            class="subject-tag"
+            >{{ subject }}</ATag
+          ><span v-if="!student.subjects.length">—</span>
+        </dd>
       </div>
       <div class="basic-info-wide">
         <dt>进行中的学习计划</dt>

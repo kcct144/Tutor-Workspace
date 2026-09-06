@@ -1,12 +1,25 @@
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { runDatabaseCommand } from "./connection.mjs";
-import {
-  assertApprovedDatabase,
-  parseS1Migration,
-} from "../server/db/safety.ts";
+import { assertApprovedDatabase, parseMigration } from "../server/db/safety.ts";
 
-const versions = ["000_schema_migrations", "001_students"];
+const manifest = [
+  {
+    version: "000_schema_migrations",
+    tables: ["schema_migrations"],
+    references: [],
+  },
+  {
+    version: "001_students",
+    tables: ["users", "students"],
+    references: ["users"],
+  },
+  {
+    version: "002_contracts",
+    tables: ["contracts"],
+    references: ["users", "students"],
+  },
+];
 await runDatabaseCommand(async (connection) => {
   const [versionRows] = await connection.query("SELECT VERSION() AS version");
   const match = /^(\d+)\.(\d+)\.(\d+)/.exec(versionRows[0].version);
@@ -27,17 +40,18 @@ await runDatabaseCommand(async (connection) => {
     throw new Error("Migration already running");
   }
   try {
-    // Validate every file before any DDL, using a fixed S1 manifest.
+    // Validate all files against the fixed, approved manifest before any DDL.
     const migrations = await Promise.all(
-      versions.map(async (version) => {
+      manifest.map(async ({ version, tables, references }) => {
         const sql = await readFile(
           new URL("./migrations/" + version + ".sql", import.meta.url),
           "utf8",
         );
         return {
           version,
+          tables,
           checksum: createHash("sha256").update(sql).digest("hex"),
-          statements: parseS1Migration(sql),
+          statements: parseMigration(sql, tables, references),
         };
       }),
     );
@@ -45,7 +59,7 @@ await runDatabaseCommand(async (connection) => {
     const tables = new Set(tableRows.map((row) => Object.values(row)[0]));
     if (
       !tables.has("schema_migrations") &&
-      (tables.has("users") || tables.has("students"))
+      manifest.some((entry) => entry.tables.some((table) => tables.has(table)))
     ) {
       console.error("存在未登记的S1表，停止以避免覆盖。");
       throw new Error("Untracked tables");
@@ -58,16 +72,16 @@ await runDatabaseCommand(async (connection) => {
           [migration.version],
         );
         if (rows.length) {
-          if (rows[0].checksum !== migration.checksum)
+          if (rows[0].checksum !== migration.checksum) {
+            console.error(
+              migration.version + " 校验和不匹配；停止，未继续执行DDL。",
+            );
             throw new Error("Migration checksum mismatch");
+          }
           console.log(migration.version + " 已应用，跳过。");
           continue;
         }
-        if (
-          migration.version === "000_schema_migrations" ||
-          tables.has("users") ||
-          tables.has("students")
-        ) {
+        if (migration.tables.some((table) => tables.has(table))) {
           console.error(
             "检测到未完成或未登记的DDL，需人工核对；不会自动覆盖或删除。",
           );
@@ -78,11 +92,12 @@ await runDatabaseCommand(async (connection) => {
         await assertApprovedDatabase(connection);
         await connection.query(statement);
       }
+      await assertApprovedDatabase(connection);
       await connection.execute(
         "INSERT INTO schema_migrations (version, checksum) VALUES (?, ?)",
         [migration.version, migration.checksum],
       );
-      tables.add("schema_migrations");
+      migration.tables.forEach((table) => tables.add(table));
       console.log(migration.version + " 应用成功。");
     }
   } finally {

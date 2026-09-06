@@ -15,6 +15,8 @@
     "test": "vitest run",
     "db:migrate": "node database/migrate.mjs",
     "db:seed": "node database/seeds/students.mjs",
+    "db:seed:contracts": "node database/seeds/contracts.mjs",
+    "test:s2:api": "node tests/integration/contracts.mjs",
     "test:s1:api": "node tests/integration/students.mjs",
     "postinstall": "nuxt prepare"
   },
