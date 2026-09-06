@@ -10,7 +10,7 @@ export interface HomeStudent {
   grade: StudentGrade;
   className: string;
   expiresInDays?: number;
-  plans: string[];
+  plans: { id: string; title: string }[];
   subjects: string[];
   tasks: HomeTask[];
 }

@@ -24,6 +24,7 @@ declare module 'vue' {
     ALayoutContent: typeof import('ant-design-vue/es')['LayoutContent']
     ALayoutHeader: typeof import('ant-design-vue/es')['LayoutHeader']
     AModal: typeof import('ant-design-vue/es')['Modal']
+    APagination: typeof import('ant-design-vue/es')['Pagination']
     ARangePicker: typeof import('ant-design-vue/es/date-picker/dayjs')['RangePicker']
     AResult: typeof import('ant-design-vue/es')['Result']
     ASelect: typeof import('ant-design-vue/es')['Select']

@@ -1,7 +1,7 @@
 export default defineEventHandler((event) => {
   if (
-    ["/api/contracts/", "/api/learning-records/"].some((path) =>
-      event.path.startsWith(path),
+    ["/api/contracts/", "/api/learning-records/", "/api/study-plans/"].some(
+      (path) => event.path.startsWith(path),
     ) &&
     ["POST", "PATCH"].includes(event.method)
   ) {

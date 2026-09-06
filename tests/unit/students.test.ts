@@ -18,6 +18,9 @@ import { apiResponse, ApiError } from "../../server/utils/api";
 vi.mock("../../server/db/contracts.ts", () => ({
   studentContractAggregates: async () => new Map(),
 }));
+vi.mock("../../server/db/study-plans.ts", () => ({
+  studentPlanTags: async () => new Map(),
+}));
 
 afterEach(() => vi.unstubAllGlobals());
 

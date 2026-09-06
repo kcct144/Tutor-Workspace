@@ -41,7 +41,7 @@ const columns: TableColumnType[] = [
         </h1>
       </div>
       <span class="prototype-note"
-        >S3 · 学生、合同与最近跟进已接入，学习计划后续接入</span
+        >S4 · 学生、合同、最近跟进与学习计划已接入</span
       >
     </section>
     <section class="students-toolbar">
@@ -93,9 +93,7 @@ const columns: TableColumnType[] = [
           <span v-if="column.key === 'class'" class="muted-cell">{{
             record.className ?? "—"
           }}</span>
-          <span v-else-if="column.key === 'plans'" class="muted-cell"
-            >后续接入</span
-          >
+          <PlanTags v-else-if="column.key === 'plans'" :plans="record.plans" />
           <span v-else-if="column.key === 'expiryDate'">{{
             record.expiryDate ?? "—"
           }}</span>

@@ -74,7 +74,7 @@ defineProps<{ student: StudentDetail }>();
       </div>
       <div class="basic-info-wide">
         <dt>进行中的学习计划</dt>
-        <dd>后续接入</dd>
+        <dd><PlanTags :plans="student.plans" /></dd>
       </div>
     </dl>
   </section>

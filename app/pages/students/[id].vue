@@ -43,7 +43,7 @@ const taskColumns: TableColumnType[] = [
       <p v-if="loading" role="status">正在刷新基本信息…</p>
       <div class="detail-context-row">
         <span class="prototype-note"
-          >S3 · 学习记录与最近跟进已接入；计划和任务后续接入</span
+          >S4 · 基本信息、学习记录与计划已接入；任务后续接入</span
         >
       </div>
       <div class="detail-layout">

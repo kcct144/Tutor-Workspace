@@ -89,7 +89,9 @@ function completedTaskCount(student: HomeStudent) {
           {{ grade }}
         </button>
       </div>
-      <span class="prototype-note">原型数据 · 仅本次会话有效</span>
+      <span class="prototype-note"
+        >首页学生与任务仍为原型 · 真实聚合后续接入</span
+      >
     </div>
 
     <div v-if="visibleStudents.length" class="student-grid">
@@ -128,9 +130,7 @@ function completedTaskCount(student: HomeStudent) {
         </div>
         <div class="plan-row">
           <div class="plan-tags">
-            <ATag v-for="plan in student.plans" :key="plan" class="plan-tag">{{
-              plan
-            }}</ATag>
+            <span>学习计划后续接入</span>
           </div>
         </div>
         <div class="task-groups">

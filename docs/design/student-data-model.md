@@ -1,6 +1,6 @@
-# 学生数据模型（S1基础 + S2合同聚合 + S3学习记录）
+# 学生数据模型（S1基础 + S2合同 + S3记录 + S4计划关联）
 
-- 状态：已实现（S1–S3，待验收）
+- 状态：已实现（S1–S4，待验收）
 - 负责人：开发负责人（按总指挥裁决同步）
 - 创建日期：2026-09-05
 - 最后更新日期：2026-09-06
@@ -34,7 +34,11 @@ schema_migrations：version VARCHAR(64) PK、checksum CHAR(64)、applied_at DATE
 选择器仅id/name/grade；列表不返回监护人/备注。详情才返回监护人/备注/负责人，全部仅合成测试数据。
 S2已接入contracts：由服务端Asia/Shanghai今天判定有效时间合同start≤今天≤end，课时attended<total；列表和详情subjects从有效合同去重聚合，expiryDate取有效时间合同MIN(end_date)，没有则[]/null，无mock兜底。每页学生ID批量聚合，学生表不新增冗余字段。
 S2编号由crypto.randomUUID生成、唯一且API不可改，编辑version防覆盖；表字段/索引/互斥约束以[合同PRD](../prd/contracts.md)和002_contracts.sql为准。created_by/updated_by为DEV_ACTOR_ID人员引用，不建历史审计表。合同保存使学生数据失效，跨页重读/聚焦刷新。
-plans仍[]，明确后续接入。S3最近跟进取MAX(记录occurred_on)，无记录null；列表按最近跟进降序（null末尾）/id降序，不受记录列表筛选影响，不向students写冗余字段。列表使用分组派生表JOIN，详情单学生聚合，不逐个学生查询。学习计划/任务表未引入。
+S4 plans为真实{id,title}[]，从study_plan_students和study_plan_documents批量读取；无关联[]。同名不同ID不合并，标签跳转/plans?planId=真实ID；列表一页学生仅一次关联查询，按学生分组聚合并LIMIT本页学生数，不截断单个学生的关系、不产生N+1。选择器仍只投影id/name/grade。S3最近跟进取MAX(记录occurred_on)，无记录null；列表按最近跟进降序（null末尾）/id降序，不受记录列表筛选影响，不向students写冗余字段。列表使用分组派生表JOIN，详情单学生聚合，不逐个学生查询。任务表未引入。
+
+## S4计划只读关系（已实现）
+
+004显式新增文档与多对多关系表，详见[学习计划模型](study-plan-data-model.md)。复合主键(plan_id,student_id)去重；两个方向外键均RESTRICT。关系只表示进行中，由固定合成装载维护，无新增/取消/状态/历史API或UI。学生表不保存名称数组、正文或关系冗余字段。首页真实学生接入留待S6，原型计划区标注后续接入，不拼接原型学生ID与真实关系。
 
 ## S3学习记录模型（已实现）
 
@@ -51,6 +55,6 @@ plans仍[]，明确后续接入。S3最近跟进取MAX(记录occurred_on)，无�
 ## 安全与执行
 
 仅允许用户批准的tutor_workspace。每个连接在迁移/装载/业务查询前执行DATABASE()校验，不匹配停止，不显示真实配置。禁用多语句SQL，不允许切库、数据库创建删除、清库或操作其他库。
-迁移固定清单：S1三表、S2仅contracts、S3仅student_learning_records，受限语句检查，不接受任意SQL。S1种子检查人员/学生表为空；S2合同种子只给已识别的合成学生追加；S3种子仅给指定合成学生装载固定记录，已有记录的学生跳过，不读mock、不改.env。每次DML前再次校验DATABASE()。
+迁移固定清单：S1三表、S2仅contracts、S3仅student_learning_records、S4仅study_plan_documents和study_plan_students，受限语句检查，不接受任意SQL。S1种子检查人员/学生表为空；S2合同种子只给已识别的合成学生追加；S3种子仅给指定合成学生装载固定记录；S4仅3份固定计划、4条关系，完整匹配则跳过、不覆盖正文。不读mock、不改.env。每次DML前再次校验DATABASE()。
 DEV_ACTOR_ID由用户在.env自行填写；S2写入和合同种子验证人员存在，缺失/无效拒绝。S1创建首个演示人员的装载不依赖该值，不是浏览器写接口。
 回滚默认保留表与数据，回退应用；不提供自动破坏性down。需处理失败DDL时先检查当前库和现有结构，再单独审批修复，不删除其他表。
