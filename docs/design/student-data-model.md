@@ -34,11 +34,11 @@ schema_migrations：version VARCHAR(64) PK、checksum CHAR(64)、applied_at DATE
 选择器仅id/name/grade；列表不返回监护人/备注。详情才返回监护人/备注/负责人，全部仅合成测试数据。
 S2已接入contracts：由服务端Asia/Shanghai今天判定有效时间合同start≤今天≤end，课时attended<total；列表和详情subjects从有效合同去重聚合，expiryDate取有效时间合同MIN(end_date)，没有则[]/null，无mock兜底。每页学生ID批量聚合，学生表不新增冗余字段。
 S2编号由crypto.randomUUID生成、唯一且API不可改，编辑version防覆盖；表字段/索引/互斥约束以[合同PRD](../prd/contracts.md)和002_contracts.sql为准。created_by/updated_by为DEV_ACTOR_ID人员引用，不建历史审计表。合同保存使学生数据失效，跨页重读/聚焦刷新。
-S4 plans为真实{id,title}[]，从study_plan_students和study_plan_documents批量读取；无关联[]。同名不同ID不合并，标签跳转/plans?planId=真实ID；列表一页学生仅一次关联查询，按学生分组聚合并LIMIT本页学生数，不截断单个学生的关系、不产生N+1。选择器仍只投影id/name/grade。S3最近跟进取MAX(记录occurred_on)，无记录null；列表按最近跟进降序（null末尾）/id降序，不受记录列表筛选影响，不向students写冗余字段。列表使用分组派生表JOIN，详情单学生聚合，不逐个学生查询。任务表未引入。
+S4 plans为真实{id,title}[]，从study_plan_students和study_plan_documents批量读取；无关联[]。同名不同ID不合并，标签跳转/plans?planId=真实ID；列表一页学生仅一次关联查询，按学生分组聚合并LIMIT本页学生数，不截断单个学生的关系、不产生N+1。选择器仍只投影id/name/grade。S3最近跟进取MAX(记录occurred_on)，无记录null；列表按最近跟进降序（null末尾）/id降序，不受记录列表筛选影响，不向students写冗余字段。列表使用分组派生表JOIN，详情单学生聚合，不逐个学生查询。S6通过独立task_assignments列表接口读取任务，不往students写冗余任务字段。
 
 ## S4计划只读关系（已实现）
 
-004显式新增文档与多对多关系表，详见[学习计划模型](study-plan-data-model.md)。复合主键(plan_id,student_id)去重；两个方向外键均RESTRICT。关系只表示进行中，由固定合成装载维护，无新增/取消/状态/历史API或UI。学生表不保存名称数组、正文或关系冗余字段。首页真实学生接入留待S6，原型计划区标注后续接入，不拼接原型学生ID与真实关系。
+004显式新增文档与多对多关系表，详见[学习计划模型](study-plan-data-model.md)。复合主键(plan_id,student_id)去重；两个方向外键均RESTRICT。关系只表示进行中，由固定合成装载维护，无新增/取消/状态/历史API或UI。学生表不保存名称数组、正文或关系冗余字段。S6首页已接入真实在读学生，先分页后批量聚合合同、计划与任务摘要，不拼接mock ID。
 
 ## S3学习记录模型（已实现）
 

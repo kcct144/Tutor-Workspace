@@ -5,6 +5,7 @@ export default defineEventHandler((event) => {
       "/api/learning-records/",
       "/api/study-plans/",
       "/api/tasks/",
+      "/api/task-assignments/",
     ].some((path) => event.path.startsWith(path)) &&
     ["POST", "PATCH"].includes(event.method)
   ) {

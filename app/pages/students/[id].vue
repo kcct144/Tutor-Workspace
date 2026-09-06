@@ -1,14 +1,8 @@
 <script setup lang="ts">
-import type { TableColumnType } from "ant-design-vue";
 const route = useRoute();
 const { student, loading, error, notFound, refresh } = useStudentDetail(() =>
   String(route.params.id),
 );
-const taskColumns: TableColumnType[] = [
-  { title: "任务", key: "title" },
-  { title: "截止日期", key: "dueDate", width: 140 },
-  { title: "状态", key: "status", width: 100 },
-];
 </script>
 
 <template>
@@ -43,31 +37,17 @@ const taskColumns: TableColumnType[] = [
       <p v-if="loading" role="status">正在刷新基本信息…</p>
       <div class="detail-context-row">
         <span class="prototype-note"
-          >S4 · 基本信息、学习记录与计划已接入；任务后续接入</span
+          >S6 · 学生、学习记录、计划与任务已接入</span
         >
       </div>
       <div class="detail-layout">
         <BasicInfoPanel :student="student" />
         <div class="detail-main">
           <LearningRecordsSection :key="student.id" :student-id="student.id" />
-          <DeferredStudentSection
-            title="任务列表"
-            description="当前学生的任务安排"
-            :columns="taskColumns"
-          >
-            <template #filters>
-              <AInput
-                class="detail-search"
-                disabled
-                placeholder="搜索任务名称（后续接入）"
-              />
-              <ASelect
-                class="detail-filter"
-                disabled
-                placeholder="状态：全部"
-              />
-            </template>
-          </DeferredStudentSection>
+          <AssignmentsSection
+            :key="'tasks-' + student.id"
+            :student-id="student.id"
+          />
         </div>
       </div>
     </template>

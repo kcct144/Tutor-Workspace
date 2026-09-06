@@ -8,6 +8,7 @@ import {
   loadTaskSubjects,
 } from "~/services/tasks";
 import { ServiceError } from "~/services/http";
+import { useTaskInvalidation, notifyTaskChange } from "./useTaskInvalidation";
 import type {
   TaskDefinition,
   TaskQuery,
@@ -172,6 +173,7 @@ export function useTasks() {
       } else await createTask(input);
       modalOpen.value = false;
       notice.value = "任务定义已保存。";
+      notifyTaskChange();
       if (query.value.page !== 1) query.value.page = 1;
       else await refresh();
     } catch (cause) {
@@ -198,6 +200,7 @@ export function useTasks() {
         expectedVersion: task.version,
       });
       notice.value = "任务状态已更新。";
+      notifyTaskChange();
       await refresh();
     } catch (cause) {
       notice.value = message(cause, "状态更新未确认，请刷新核对。");
@@ -211,6 +214,7 @@ export function useTasks() {
     listController?.abort();
     detailController?.abort();
   });
+  useTaskInvalidation(refresh);
   return {
     query,
     items,

@@ -1,12 +1,12 @@
 # 学管师工作台
 
-- 状态：S1–S5已实现，待测试验收
+- 状态：S1–S6已实现，待测试验收
 - 负责人：开发负责人
 - 创建日期：2026-09-05
 - 最后更新日期：2026-09-06
 - 关联需求：S1学生基础、S2合同
 
-S1学生基础、S2合同聚合、S3学习记录及最近跟进、S4学习计划与只读关联、S5任务定义已接入真实MySQL。仅受控开发/测试使用，无登录和权限隔离，**不得公网部署或导入真实人员/学生数据**。任务分配和首页真实数据接入仍待S6授权。
+S1学生基础、S2合同聚合、S3学习记录及最近跟进、S4学习计划与只读关联、S5任务定义已接入真实MySQL。仅受控开发/测试使用，无登录和权限隔离，**不得公网部署或导入真实人员/学生数据**。S6任务分配、学生详情任务、首页聚合和任务定义分配人数均已接入真实数据。
 
 ## 前置依赖
 
@@ -42,13 +42,13 @@ pnpm dev --host 127.0.0.1       # 仅本机访问，默认3000；被占用时查
 - `NUXT_PUBLIC_APP_URL`：浏览器可访问的应用地址。
 - `NUXT_MYSQL_HOST`、`PORT`、`DATABASE`、`USER`、`PASSWORD`：云端 MySQL 连接参数，必须由用户填写。
 - `NUXT_MYSQL_SSL`：云服务要求 TLS 时填 `true`，使用系统信任链验证证书；不支持忽略证书校验。私有 CA 场景先单独配置，不应关闭验证。
-- `DEV_ACTOR_ID`：默认空，由用户把S1种子脚本输出的演示人员ID手工填入。S2–S5写接口从服务端读取并校验人员存在；缺失/无效返回503，不接受浏览器传入，读取接口不依赖此值。
+- `DEV_ACTOR_ID`：默认空，由用户把S1种子脚本输出的演示人员ID手工填入。S2–S6写接口从服务端读取并校验人员存在；缺失/无效返回503，不接受浏览器传入，读取接口不依赖此值。
 - `NUXT_REDIS_URL`：可选 Redis URL；设置后优先于分项参数。
 - `NUXT_REDIS_HOST`、`PORT`、`PASSWORD`、`DB`：可选 Redis 分项参数；未配置时应用不会尝试连接 Redis。
 
 `.env` 已被 Git 忽略。不要把真实配置值粘贴到聊天、文档、截图、日志或提交记录。种子脚本不会修改 `.env`。`DEV_ACTOR_ID` 不是认证，无论是否填值均不得公网开放。Redis位置由环境变量决定，S1不使用Redis。
 
-S1建users、students、schema_migrations；S2新增contracts；S3新增student_learning_records；S4新增study_plan_documents、study_plan_students；S5仅新增tasks。使用Node原生能力和已有mysql2显式迁移，不增加ORM/迁移框架。S2–S5写请求均要求有效的服务端DEV_ACTOR_ID。操作权限、失败恢复、数据保留回退详见 [数据库说明](database/README.md)。
+S1建users、students、schema_migrations；S2新增contracts；S3新增student_learning_records；S4新增study_plan_documents、study_plan_students；S5新增tasks；S6仅新增task_assignments。使用Node原生能力和已有mysql2显式迁移，不增加ORM/迁移框架。S2–S6写请求均要求有效的服务端DEV_ACTOR_ID。操作权限、失败恢复、数据保留回退详见 [数据库说明](database/README.md)。
 
 ## 常用命令
 
@@ -100,9 +100,22 @@ docs/               产品、设计与测试文档
 tests/              自动化测试
 ```
 
-TODO（开发负责人；S6验收时结束）：首页和任务分配仍是独立原型；旧学生和任务mock仍供分配原型使用，不供/tasks真实定义页读取。首页计划区明确后续接入，不使用名称数组兜底。S6未授权，不提前实施。
+S6已删除不再使用的首页、学生选择及任务分配mock/service/type；真实接入区域不回退mock。首页仅在读学生，服务端分页，任务摘要每组最多3条并返回准确总数/剩余数。详见[S6交付报告](docs/test/s6-task-assignments-home-delivery.md)。
 
-S5任务定义已接入真实列表/详情/新增/编辑/启停，默认启用且只有启用/停用；分配人数API固定0，无分配表。科目选项独立分页搜索，写操作必须有服务端DEV_ACTOR_ID。文件清单、测试及回退见[S5交付报告](docs/test/s5-task-definitions-delivery.md)。
+S6显式操作（只在受控合成验收数据集执行）：
+
+```powershell
+pnpm db:migrate             # 应用006；不在启动/安装/构建时运行
+pnpm db:seed:assignments    # 9条固定历史分配；已有集合只验证、跳过
+$env:S6_API_BASE_URL = 'http://127.0.0.1:3001'
+pnpm test:s6:api            # 最多4条固定API验收分配，重复复用
+pnpm build
+node tests/integration/assignment-actor-api.mjs
+```
+
+测试仅增加或修改S6固定分配，S1–S5只读指纹比对；不得同时人工修改验收记录。旧S1–S5集成脚本可能编辑其领域的固定数据，不属于S6授权执行范围。S5脚本已更新为分配表存在/真实人数断言，但因会编辑既有任务，本次不执行；S6脚本已独立验证新的真实人数统计。
+
+S5任务定义已接入真实列表/详情/新增/编辑/启停，默认启用且只有启用/停用；S6分配人数按历史去重学生统计。科目选项独立分页搜索，写操作必须有服务端DEV_ACTOR_ID。文件清单、测试及回退见[S5交付报告](docs/test/s5-task-definitions-delivery.md)。
 
 S4保留计划左右布局，支持搜索分页、按需详情、安全Markdown预览及仅正文编辑；学生标签使用真实计划ID。同名计划不合并，无新建/删除/关系管理。详见[S4交付报告](docs/test/s4-study-plans-delivery.md)。真实API测试会修改固定演示正文并恢复，应独占执行；种子和测试均不读取mock JSON、不修改.env。
 

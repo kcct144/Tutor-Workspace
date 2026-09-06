@@ -44,6 +44,17 @@ await runDatabaseCommand(async (db) => {
     return value.data;
   }
   const detail = (id) => request("detail?id=" + id);
+  // S6 now supplies real counts. This script still writes S5 fixtures and needs
+  // separate authority when the active slice forbids changing existing tasks.
+  const assignmentCount = async (id) =>
+    Number(
+      (
+        await db.execute(
+          "SELECT COUNT(DISTINCT student_id) AS n FROM task_assignments WHERE task_id=? LIMIT 1",
+          [id],
+        )
+      )[0][0].n,
+    );
   const update = (task, changes = {}, expected = 200) =>
     request(
       "update",
@@ -71,7 +82,7 @@ await runDatabaseCommand(async (db) => {
     const before = await protectedSnapshot(db);
     const [tables] = await db.query("SHOW TABLES");
     assert.ok(
-      !tables.some((row) => Object.values(row).includes("task_assignments")),
+      tables.some((row) => Object.values(row).includes("task_assignments")),
     );
     phase = "约束和失败事务";
     const observer = await openDatabase();
@@ -182,7 +193,7 @@ await runDatabaseCommand(async (db) => {
         "assignmentCount",
       ].sort(),
     );
-    assert.equal(task.assignmentCount, 0);
+    assert.equal(task.assignmentCount, await assignmentCount(task.id));
     for (const status of ["disabled", "enabled", "disabled"]) {
       task = await setStatus(task, status);
       assert.equal((await detail(task.id)).status, status);
@@ -276,11 +287,10 @@ await runDatabaseCommand(async (db) => {
     );
     const disabled = await request("list?status=disabled");
     assert.ok(disabled.items.length);
-    assert.ok(
-      disabled.items.every(
-        (item) => item.status === "disabled" && item.assignmentCount === 0,
-      ),
-    );
+    for (const item of disabled.items) {
+      assert.equal(item.status, "disabled");
+      assert.equal(item.assignmentCount, await assignmentCount(item.id));
+    }
     const subjects = await request("subjects?pageSize=1"),
       sub2 = await request("subjects?pageSize=1&page=2");
     assert.notEqual(subjects.items[0].value, sub2.items[0].value);

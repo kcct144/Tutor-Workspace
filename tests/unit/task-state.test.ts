@@ -12,6 +12,10 @@ const api = vi.hoisted(() => ({
   loadTaskSubjects: vi.fn(),
 }));
 vi.mock("~/services/tasks", () => api);
+vi.mock("./../../app/composables/useTaskInvalidation", () => ({
+  useTaskInvalidation: vi.fn(),
+  notifyTaskChange: vi.fn(),
+}));
 const task: TaskDefinition = {
   id: "1",
   title: "任务",

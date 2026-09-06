@@ -11,6 +11,7 @@ import type { Page } from "../../types/api/students.ts";
 import { likeValue } from "./contracts.ts";
 import { executeWrite } from "./write.ts";
 import { ApiError } from "../utils/api.ts";
+import { taskAssignmentCounts } from "./task-assignments.ts";
 interface TaskRow extends RowDataPacket {
   id: string;
   title: string;
@@ -76,6 +77,12 @@ export async function listTasks(
       " ORDER BY updated_at DESC,id DESC LIMIT ? OFFSET ?",
     [...where.values, query.pageSize, (query.page - 1) * query.pageSize],
   );
+  const counts = options
+    ? new Map<string, number>()
+    : await taskAssignmentCounts(
+        db,
+        rows.map((row) => String(row.id)),
+      );
   return {
     items: options
       ? rows.map((row) => ({
@@ -83,7 +90,10 @@ export async function listTasks(
           title: row.title,
           subject: row.subject,
         }))
-      : rows.map(projectTask),
+      : rows.map((row) => ({
+          ...projectTask(row),
+          assignmentCount: counts.get(String(row.id)) ?? 0,
+        })),
     total: Number(count[0]!.total),
     page: query.page,
     pageSize: query.pageSize,
@@ -121,7 +131,8 @@ export async function findTask(
     [id],
   );
   if (!rows[0]) throw new ApiError(404, "NOT_FOUND", "未找到任务定义。");
-  return projectTask(rows[0]);
+  const counts = await taskAssignmentCounts(db, [id]);
+  return { ...projectTask(rows[0]), assignmentCount: counts.get(id) ?? 0 };
 }
 export async function createTask(
   db: Connection,

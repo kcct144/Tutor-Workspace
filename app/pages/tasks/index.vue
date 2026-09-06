@@ -48,7 +48,7 @@ const columns: TableColumnType[] = [
           任务列表 <span>{{ total }}</span>
         </h1>
       </div>
-      <span class="prototype-note">S5 · 真实任务定义 · 分配后续接入</span>
+      <span class="prototype-note">S6 · 真实任务定义与分配人数</span>
     </section>
     <section class="tasks-toolbar students-toolbar">
       <AInput

@@ -21,7 +21,7 @@ export interface TaskDefinition extends TaskWrite {
   version: number;
   createdAt: string;
   updatedAt: string;
-  assignmentCount: 0;
+  assignmentCount: number;
 }
 export interface TaskOption {
   id: string;
