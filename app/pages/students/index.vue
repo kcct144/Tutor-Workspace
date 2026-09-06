@@ -26,6 +26,7 @@ const columns: TableColumnType[] = [
   { title: "科目", key: "subjects", width: 170 },
   { title: "状态", dataIndex: "status", key: "status", width: 110 },
   { title: "到期时间", key: "expiryDate", width: 140 },
+  { title: "最近跟进", key: "lastFollowUp", width: 140 },
   { title: "操作", key: "action", width: 100, fixed: "right" },
 ];
 </script>
@@ -40,7 +41,7 @@ const columns: TableColumnType[] = [
         </h1>
       </div>
       <span class="prototype-note"
-        >S2 · 学生基础与合同聚合已接入，学习计划后续接入</span
+        >S3 · 学生、合同与最近跟进已接入，学习计划后续接入</span
       >
     </section>
     <section class="students-toolbar">
@@ -84,6 +85,7 @@ const columns: TableColumnType[] = [
         :total="total"
         :page-size="pageSize"
         :loading="loading"
+        :scroll-x="1420"
         empty-text="暂无符合条件的学员"
         @change="changePage"
       >
@@ -96,6 +98,9 @@ const columns: TableColumnType[] = [
           >
           <span v-else-if="column.key === 'expiryDate'">{{
             record.expiryDate ?? "—"
+          }}</span>
+          <span v-else-if="column.key === 'lastFollowUp'">{{
+            record.lastFollowUp ?? "—"
           }}</span>
           <span v-else-if="column.key === 'subjects'"
             ><ATag

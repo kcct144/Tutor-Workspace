@@ -19,6 +19,11 @@ const manifest = [
     tables: ["contracts"],
     references: ["users", "students"],
   },
+  {
+    version: "003_learning_records",
+    tables: ["student_learning_records"],
+    references: ["users", "students"],
+  },
 ];
 await runDatabaseCommand(async (connection) => {
   const [versionRows] = await connection.query("SELECT VERSION() AS version");

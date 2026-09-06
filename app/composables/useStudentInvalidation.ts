@@ -1,6 +1,6 @@
 import { onMounted, onScopeDispose } from "vue";
 
-const eventName = "student-contracts-changed";
+const eventName = "student-data-changed";
 export function notifyStudentChange() {
   if (typeof window !== "undefined") window.dispatchEvent(new Event(eventName));
 }

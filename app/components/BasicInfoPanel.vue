@@ -55,7 +55,7 @@ defineProps<{ student: StudentDetail }>();
       </div>
       <div>
         <dt>最近跟进</dt>
-        <dd>后续接入</dd>
+        <dd>{{ student.lastFollowUp ?? "—" }}</dd>
       </div>
       <div class="basic-info-wide">
         <dt>备注</dt>

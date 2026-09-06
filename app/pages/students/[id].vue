@@ -4,12 +4,6 @@ const route = useRoute();
 const { student, loading, error, notFound, refresh } = useStudentDetail(() =>
   String(route.params.id),
 );
-const recordColumns: TableColumnType[] = [
-  { title: "发生日期", key: "occurredOn", width: 130 },
-  { title: "分类", key: "category", width: 90 },
-  { title: "学习记录", key: "content" },
-  { title: "记录人", key: "authorName", width: 100 },
-];
 const taskColumns: TableColumnType[] = [
   { title: "任务", key: "title" },
   { title: "截止日期", key: "dueDate", width: 140 },
@@ -20,7 +14,11 @@ const taskColumns: TableColumnType[] = [
 <template>
   <div class="detail-page">
     <NuxtLink class="back-link" to="/students">← 返回学员管理</NuxtLink>
-    <ASkeleton v-if="loading" active aria-label="正在加载学生详情" />
+    <ASkeleton
+      v-if="loading && !student"
+      active
+      aria-label="正在加载学生详情"
+    />
     <AResult
       v-else-if="notFound"
       status="404"
@@ -28,7 +26,7 @@ const taskColumns: TableColumnType[] = [
       sub-title="请返回学员管理重新选择学生"
     />
     <AAlert
-      v-else-if="error"
+      v-else-if="error && !student"
       type="error"
       show-icon
       :message="error"
@@ -37,43 +35,21 @@ const taskColumns: TableColumnType[] = [
       <template #action><AButton @click="refresh">重试</AButton></template>
     </AAlert>
     <template v-else-if="student">
+      <AAlert v-if="error" type="error" :message="error" show-icon
+        ><template #action
+          ><AButton @click="refresh">重试基本信息</AButton></template
+        ></AAlert
+      >
+      <p v-if="loading" role="status">正在刷新基本信息…</p>
       <div class="detail-context-row">
         <span class="prototype-note"
-          >S2 · 基本信息与合同聚合已接入；学习记录、计划和任务后续接入</span
+          >S3 · 学习记录与最近跟进已接入；计划和任务后续接入</span
         >
       </div>
       <div class="detail-layout">
         <BasicInfoPanel :student="student" />
         <div class="detail-main">
-          <DeferredStudentSection
-            title="学习记录"
-            description="记录学生的学习表现与跟进情况"
-            :columns="recordColumns"
-          >
-            <template #action
-              ><AButton type="primary" class="primary-green-button" disabled
-                >＋ 新增记录（后续接入）</AButton
-              ></template
-            >
-            <template #filters>
-              <AInput
-                class="detail-search"
-                disabled
-                placeholder="搜索记录内容（后续接入）"
-              />
-              <ASelect
-                class="detail-filter"
-                disabled
-                placeholder="分类：全部"
-              />
-              <ARangePicker
-                class="record-date-range"
-                disabled
-                separator="至"
-                :placeholder="['开始日期', '结束日期']"
-              />
-            </template>
-          </DeferredStudentSection>
+          <LearningRecordsSection :key="student.id" :student-id="student.id" />
           <DeferredStudentSection
             title="任务列表"
             description="当前学生的任务安排"

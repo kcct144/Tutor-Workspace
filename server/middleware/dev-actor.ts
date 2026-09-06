@@ -1,6 +1,8 @@
 export default defineEventHandler((event) => {
   if (
-    event.path.startsWith("/api/contracts/") &&
+    ["/api/contracts/", "/api/learning-records/"].some((path) =>
+      event.path.startsWith(path),
+    ) &&
     ["POST", "PATCH"].includes(event.method)
   ) {
     // Server environment only. Never use a browser header/body as identity.

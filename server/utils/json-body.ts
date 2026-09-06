@@ -2,7 +2,10 @@ import type { H3Event } from "h3";
 import { getHeader, getQuery } from "h3";
 import { ApiError } from "./api";
 
-export async function contractBody(event: H3Event): Promise<unknown> {
+export async function jsonBody(
+  event: H3Event,
+  limit: number,
+): Promise<unknown> {
   if (Object.keys(getQuery(event)).length)
     throw new ApiError(400, "VALIDATION_ERROR", "写请求不接受查询参数。");
   if (
@@ -17,13 +20,13 @@ export async function contractBody(event: H3Event): Promise<unknown> {
     let size = 0;
     event.node.req.on("data", (chunk: Buffer) => {
       size += chunk.length;
-      if (size <= 16384) chunks.push(chunk);
+      if (size <= limit) chunks.push(chunk);
       else chunks.length = 0;
     });
     event.node.req.on("end", () =>
-      size > 16384
+      size > limit
         ? reject(
-            new ApiError(413, "PAYLOAD_TOO_LARGE", "合同请求超过16KiB限制。"),
+            new ApiError(413, "PAYLOAD_TOO_LARGE", "请求正文超过大小限制。"),
           )
         : resolve(Buffer.concat(chunks)),
     );

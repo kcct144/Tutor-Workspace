@@ -104,7 +104,6 @@ export function useStudentDetail(id: () => string) {
     loading.value = true;
     error.value = "";
     statusCode.value = 0;
-    student.value = null;
     try {
       const result = await getStudent(id(), request.signal);
       if (!request.signal.aborted) student.value = result;
@@ -123,6 +122,7 @@ export function useStudentDetail(id: () => string) {
   watch(
     id,
     () => {
+      student.value = null;
       void refresh();
     },
     { immediate: true },

@@ -25,6 +25,7 @@ interface StudentRow extends RowDataPacket {
   note: string | null;
   owner_id: string | null;
   owner_name: string | null;
+  last_follow_up?: string | null;
 }
 
 export function toStudentListItem(row: StudentRow): StudentListItem {
@@ -38,7 +39,7 @@ export function toStudentListItem(row: StudentRow): StudentListItem {
     subjects: [],
     plans: [],
     expiryDate: null,
-    lastFollowUp: null,
+    lastFollowUp: row.last_follow_up ?? null,
   };
 }
 export function toStudentDetail(row: StudentRow): StudentDetail {
@@ -67,13 +68,20 @@ export async function listStudents(
   );
   const columns = options
     ? "s.id, s.name, s.grade"
-    : "s.id, s.name, s.grade, s.class_name, s.school, s.status";
+    : "s.id, s.name, s.grade, s.class_name, s.school, s.status, lr.last_follow_up";
+  const join = options
+    ? ""
+    : " LEFT JOIN (SELECT student_id, MAX(occurred_on) AS last_follow_up FROM student_learning_records GROUP BY student_id) lr ON lr.student_id=s.id";
   const [rows] = await connection.execute<StudentRow[]>(
     "SELECT " +
       columns +
       " FROM students s" +
+      join +
       filter.sql +
-      " ORDER BY s.id DESC LIMIT ? OFFSET ?",
+      (options
+        ? " ORDER BY s.id DESC"
+        : " ORDER BY lr.last_follow_up DESC, s.id DESC") +
+      " LIMIT ? OFFSET ?",
     [...filter.values, query.pageSize, (query.page - 1) * query.pageSize],
   );
   const aggregates = options
@@ -103,7 +111,7 @@ export async function findStudent(
   id: string,
 ): Promise<StudentDetail> {
   const [rows] = await connection.execute<StudentRow[]>(
-    "SELECT s.id, s.name, s.grade, s.class_name, s.school, s.status, s.gender, s.enrolled_at, s.created_at, s.guardian_name, s.guardian_phone, s.note, u.id AS owner_id, u.name AS owner_name FROM students s LEFT JOIN users u ON u.id = s.owner_user_id WHERE s.id = ? LIMIT 1",
+    "SELECT s.id, s.name, s.grade, s.class_name, s.school, s.status, s.gender, s.enrolled_at, s.created_at, s.guardian_name, s.guardian_phone, s.note, u.id AS owner_id, u.name AS owner_name, (SELECT MAX(occurred_on) FROM student_learning_records WHERE student_id=s.id) AS last_follow_up FROM students s LEFT JOIN users u ON u.id = s.owner_user_id WHERE s.id = ? LIMIT 1",
     [id],
   );
   if (!rows[0]) throw new ApiError(404, "NOT_FOUND", "未找到学生。");
