@@ -13,6 +13,7 @@ const notify = vi.hoisted(() => vi.fn());
 vi.mock("~/services/learning-records", () => api);
 vi.mock("../../app/composables/useStudentInvalidation", () => ({
   notifyStudentChange: notify,
+  useStudentInvalidation: vi.fn(),
 }));
 afterEach(() => vi.resetAllMocks());
 const record: LearningRecord = {

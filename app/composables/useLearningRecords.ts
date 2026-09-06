@@ -11,7 +11,10 @@ import {
   reloadRecord,
 } from "~/services/learning-records";
 import { ServiceError } from "~/services/http";
-import { notifyStudentChange } from "./useStudentInvalidation";
+import {
+  notifyStudentChange,
+  useStudentInvalidation,
+} from "./useStudentInvalidation";
 
 export function useLearningRecords(studentId: () => string) {
   const items = ref<LearningRecord[]>([]),
@@ -76,6 +79,8 @@ export function useLearningRecords(studentId: () => string) {
     category.value = undefined;
     dates.value = undefined;
   }
+  // Refresh list only; editing and draft retain their original version/content.
+  useStudentInvalidation(refresh);
   watch([keyword, category, dates], () => {
     if (page.value !== 1) page.value = 1;
     else void refresh();
