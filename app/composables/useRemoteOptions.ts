@@ -1,6 +1,11 @@
 import { computed, onScopeDispose, ref, watch } from "vue";
 import type { OptionLoader, RemoteOption } from "~/services/contracts";
-export function useRemoteOptions(loader: () => OptionLoader) {
+import { useStudentInvalidation } from "./useStudentInvalidation";
+export function useRemoteOptions(
+  loader: () => OptionLoader,
+  selectedIds: () => string[] = () => [],
+) {
+  const selected = ref<RemoteOption[]>([]);
   const items = ref<RemoteOption[]>([]),
     keyword = ref(""),
     page = ref(1),
@@ -14,22 +19,29 @@ export function useRemoteOptions(loader: () => OptionLoader) {
     controller = request;
     loading.value = true;
     error.value = "";
+    selected.value = [];
     const nextPage = append ? page.value + 1 : 1;
     if (!append) {
       items.value = [];
       total.value = 0;
     }
     try {
-      const result = await loader()(
-        {
-          keyword: keyword.value.trim() || undefined,
-          page: nextPage,
-          pageSize: 20,
-        },
-        request.signal,
-      );
+      const [result, selectedResult] = await Promise.all([
+        loader()(
+          {
+            keyword: keyword.value.trim() || undefined,
+            page: nextPage,
+            pageSize: 20,
+          },
+          request.signal,
+        ),
+        loader().selected && selectedIds().length
+          ? loader().selected!(selectedIds(), request.signal)
+          : Promise.resolve<RemoteOption[]>([]),
+      ]);
       if (request.signal.aborted) return;
       items.value = append ? [...items.value, ...result.items] : result.items;
+      selected.value = selectedResult;
       total.value = result.total;
       page.value = nextPage;
     } catch {
@@ -39,15 +51,17 @@ export function useRemoteOptions(loader: () => OptionLoader) {
     }
   }
   watch(
-    [keyword, loader],
+    [keyword, loader, () => selectedIds().join(",")],
     () => {
       void refresh();
     },
     { immediate: true },
   );
   onScopeDispose(() => controller?.abort());
+  useStudentInvalidation(() => refresh());
   return {
     items,
+    selected,
     keyword,
     loading,
     error,

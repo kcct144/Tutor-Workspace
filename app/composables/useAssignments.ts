@@ -6,6 +6,7 @@ import type {
 import { getAssignments } from "~/services/task-assignments";
 import { ServiceError } from "~/services/http";
 import { useTaskInvalidation } from "./useTaskInvalidation";
+import { useStudentInvalidation } from "./useStudentInvalidation";
 import { useAssignmentCompletion } from "./useAssignmentCompletion";
 export function useAssignments(
   studentId: () => string | undefined = () => undefined,
@@ -72,6 +73,7 @@ export function useAssignments(
     if (task) void completion.setCompleted(task, checked);
   }
   useTaskInvalidation(refresh);
+  useStudentInvalidation(refresh);
   onScopeDispose(() => controller?.abort());
   return {
     query,

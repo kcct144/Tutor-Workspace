@@ -14,6 +14,7 @@ const api = vi.hoisted(() => ({
 vi.mock("~/services/contracts", () => api);
 vi.mock("../../app/composables/useStudentInvalidation", () => ({
   notifyStudentChange: api.notify,
+  useStudentInvalidation: vi.fn(),
 }));
 afterEach(() => vi.resetAllMocks());
 const base: ContractWrite = {

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { message } from "ant-design-vue";
+const profile = useTemplateRef("profile");
+const statusDialog = useTemplateRef("statusDialog");
 const route = useRoute();
 const { student, loading, error, notFound, refresh } = useStudentDetail(() =>
   String(route.params.id),
@@ -36,12 +39,14 @@ const { student, loading, error, notFound, refresh } = useStudentDetail(() =>
       >
       <p v-if="loading" role="status">正在刷新基本信息…</p>
       <div class="detail-context-row">
-        <span class="prototype-note"
-          >S6 · 学生、学习记录、计划与任务已接入</span
-        >
+        <span class="prototype-note">S7 · 学生档案及关联查询已接入</span>
       </div>
       <div class="detail-layout">
-        <BasicInfoPanel :student="student" />
+        <BasicInfoPanel
+          :student="student"
+          @edit="profile?.begin(student.id)"
+          @status="statusDialog?.begin(student)"
+        />
         <div class="detail-main">
           <LearningRecordsSection :key="student.id" :student-id="student.id" />
           <AssignmentsSection
@@ -51,5 +56,10 @@ const { student, loading, error, notFound, refresh } = useStudentDetail(() =>
         </div>
       </div>
     </template>
+    <StudentProfileDrawer
+      ref="profile"
+      @saved="message.success('学生档案已保存')"
+    />
+    <StudentStatusDialog ref="statusDialog" />
   </div>
 </template>

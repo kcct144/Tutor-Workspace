@@ -9,6 +9,17 @@ export class DatabaseBoundaryError extends Error {
   }
 }
 
+/** S7 authorizes exactly this additive change, not general ALTER execution. */
+export function parseStudentVersionMigration(sql: string): string[] {
+  const statement = sql.trim().replace(/\s+/g, " ");
+  if (
+    statement !==
+    "ALTER TABLE students ADD COLUMN version INT UNSIGNED NOT NULL DEFAULT 1, ADD CONSTRAINT chk_students_version CHECK (version > 0);"
+  )
+    throw new Error("迁移超出已批准的学生版本字段范围。");
+  return [statement.slice(0, -1)];
+}
+
 export async function assertApprovedDatabase(
   connection: Pick<Connection, "query">,
 ) {

@@ -1,7 +1,12 @@
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { runDatabaseCommand } from "./connection.mjs";
-import { assertApprovedDatabase, parseMigration } from "../server/db/safety.ts";
+import {
+  assertApprovedDatabase,
+  parseMigration,
+  parseStudentVersionMigration,
+} from "../server/db/safety.ts";
+import { checkStudentVersion } from "./student-version.mjs";
 
 const manifest = [
   // Ordered, explicit migrations only.
@@ -36,6 +41,7 @@ const manifest = [
     tables: ["task_assignments"],
     references: ["tasks", "students", "users"],
   },
+  { version: "007_students_version", tables: [], references: [] },
 ];
 await runDatabaseCommand(async (connection) => {
   const [versionRows] = await connection.query("SELECT VERSION() AS version");
@@ -68,7 +74,10 @@ await runDatabaseCommand(async (connection) => {
           version,
           tables,
           checksum: createHash("sha256").update(sql).digest("hex"),
-          statements: parseMigration(sql, tables, references),
+          statements:
+            version === "007_students_version"
+              ? parseStudentVersionMigration(sql)
+              : parseMigration(sql, tables, references),
         };
       }),
     );
@@ -95,6 +104,8 @@ await runDatabaseCommand(async (connection) => {
             );
             throw new Error("Migration checksum mismatch");
           }
+          if (migration.version === "007_students_version")
+            await checkStudentVersion(connection, true);
           console.log(migration.version + " 已应用，跳过。");
           continue;
         }
@@ -105,10 +116,14 @@ await runDatabaseCommand(async (connection) => {
           throw new Error("Partial migration");
         }
       }
+      if (migration.version === "007_students_version")
+        await checkStudentVersion(connection, false);
       for (const statement of migration.statements) {
         await assertApprovedDatabase(connection);
         await connection.query(statement);
       }
+      if (migration.version === "007_students_version")
+        await checkStudentVersion(connection, true);
       await assertApprovedDatabase(connection);
       await connection.execute(
         "INSERT INTO schema_migrations (version, checksum) VALUES (?, ?)",

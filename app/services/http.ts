@@ -2,9 +2,20 @@ import type { ApiResponse } from "../../types/api/students";
 
 export class ServiceError extends Error {
   statusCode: number;
-  constructor(message: string, statusCode: number) {
+  code?: string;
+  candidates?: import("../../types/api/students").StudentDuplicateCandidate[];
+  constructor(
+    message: string,
+    statusCode: number,
+    data?: {
+      code: string;
+      candidates?: import("../../types/api/students").StudentDuplicateCandidate[];
+    },
+  ) {
     super(message);
     this.statusCode = statusCode;
+    this.code = data?.code;
+    this.candidates = data?.candidates;
   }
 }
 function responseData<T>(response: {
@@ -16,6 +27,7 @@ function responseData<T>(response: {
     throw new ServiceError(
       body?.status === "error" ? body.msg : "请求失败，请重试。",
       response.status,
+      body?.status === "error" ? body.data : undefined,
     );
   return body.data;
 }

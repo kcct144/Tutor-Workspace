@@ -179,6 +179,9 @@ describe("student query and projection", () => {
     });
     expect(page).toMatchObject({ total: 9, page: 2, pageSize: 8 });
     expect(execute.mock.calls[1]?.[0]).toContain("LIMIT ? OFFSET ?");
+    expect(execute.mock.calls[1]?.[0]).not.toContain("guardian");
+    expect(page.items[0]).not.toHaveProperty("guardianPhone");
+    expect(page.items[0]).not.toHaveProperty("guardianPhoneMasked");
     expect(execute.mock.calls[1]?.[1]).toEqual(["初一", 8, 8]);
     expect(Object.keys(page.items[0]!)).toEqual([
       "id",

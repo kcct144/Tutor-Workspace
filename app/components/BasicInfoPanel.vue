@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { StudentDetail } from "../../types/api/students";
 defineProps<{ student: StudentDetail }>();
+defineEmits<{ edit: []; status: [] }>();
 </script>
 
 <template>
@@ -12,6 +13,10 @@ defineProps<{ student: StudentDetail }>();
         <p>{{ student.school ?? "—" }}</p>
       </div>
     </div>
+    <ASpace wrap
+      ><AButton @click="$emit('edit')">编辑档案</AButton
+      ><AButton @click="$emit('status')">变更状态</AButton></ASpace
+    >
     <dl class="basic-info-list">
       <div>
         <dt>年级</dt>
@@ -31,7 +36,11 @@ defineProps<{ student: StudentDetail }>();
       </div>
       <div>
         <dt>建档时间</dt>
-        <dd>{{ student.enrolledAt ?? student.createdAt.slice(0, 10) }}</dd>
+        <dd>{{ student.createdAt.slice(0, 10) }}</dd>
+      </div>
+      <div>
+        <dt>入学日期</dt>
+        <dd>{{ student.enrolledAt ?? "—" }}</dd>
       </div>
       <div>
         <dt>主要监护人</dt>
@@ -39,7 +48,7 @@ defineProps<{ student: StudentDetail }>();
       </div>
       <div>
         <dt>监护人联系方式</dt>
-        <dd>{{ student.guardianPhone ?? "—" }}</dd>
+        <dd>{{ student.guardianPhoneMasked ?? "—" }}</dd>
       </div>
       <div>
         <dt>当前状态</dt>
@@ -51,7 +60,7 @@ defineProps<{ student: StudentDetail }>();
       </div>
       <div>
         <dt>负责学管师</dt>
-        <dd>{{ student.owner?.name ?? "—" }}</dd>
+        <dd>{{ student.owner?.name ?? "未分配" }}</dd>
       </div>
       <div>
         <dt>最近跟进</dt>

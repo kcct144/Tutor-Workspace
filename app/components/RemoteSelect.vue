@@ -11,14 +11,26 @@ const props = withDefaults(
   { selectedLabel: undefined, disabled: false, placeholder: "全部" },
 );
 const model = defineModel<string | undefined>();
-const { items, keyword, loading, error, hasMore, refresh } = useRemoteOptions(
-  () => props.loader,
-);
+const { items, selected, keyword, loading, error, hasMore, refresh } =
+  useRemoteOptions(
+    () => props.loader,
+    () => (model.value ? [model.value] : []),
+  );
 const options = computed(() =>
   model.value &&
   !items.value.some((item) => item.value === model.value) &&
-  props.selectedLabel
-    ? [{ value: model.value, label: props.selectedLabel }, ...items.value]
+  (props.selectedLabel || props.loader.selected)
+    ? [
+        {
+          value: model.value,
+          label:
+            selected.value.find((item) => item.value === model.value)?.label ??
+            (props.loader.selected
+              ? "已选学生 " + model.value
+              : props.selectedLabel),
+        },
+        ...items.value,
+      ]
     : items.value,
 );
 const VNodes = (p: { vnodes: VNode }) => p.vnodes;

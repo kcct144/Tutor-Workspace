@@ -32,9 +32,7 @@ const selectedGrade = computed<string>({
         </h1>
       </div>
       <div class="intro-actions">
-        <AButton
-          class="action-button"
-          @click="showMessage('添加学生功能将在后续版本开放')"
+        <AButton class="action-button" @click="navigateTo('/students')"
           ><span class="action-icon">＋</span>添加学生</AButton
         >
         <AButton

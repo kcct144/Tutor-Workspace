@@ -6,7 +6,7 @@ import type {
 } from "../../types/api/contracts";
 import type { Page } from "../../types/api/students";
 import { apiGet, apiWrite } from "./http";
-import { getStudentOptions } from "./students";
+import { getStudentOptions, getSelectedStudentOptions } from "./students";
 
 export const getContracts = (query: ContractQuery, signal?: AbortSignal) =>
   apiGet<Page<Contract>>("/api/contracts/list", { ...query }, signal);
@@ -25,10 +25,12 @@ export interface RemoteOption {
   label: string;
   value: string;
 }
-export type OptionLoader = (
+export type OptionLoader = ((
   query: OptionQuery,
   signal?: AbortSignal,
-) => Promise<Page<RemoteOption>>;
+) => Promise<Page<RemoteOption>>) & {
+  selected?: (ids: string[], signal?: AbortSignal) => Promise<RemoteOption[]>;
+};
 export const loadStudentOptions: OptionLoader = async (query, signal) => {
   const page = await getStudentOptions(query, signal);
   return {
@@ -38,6 +40,13 @@ export const loadStudentOptions: OptionLoader = async (query, signal) => {
       value: student.id,
     })),
   };
+};
+loadStudentOptions.selected = async (ids, signal) => {
+  const page = await getSelectedStudentOptions(ids, signal);
+  return page.items.map((student) => ({
+    value: student.id,
+    label: `${student.name} · ${student.grade}`,
+  }));
 };
 export const loadSubjectOptions: OptionLoader = async (query, signal) => {
   const page = await apiGet<Page<{ value: string }>>(

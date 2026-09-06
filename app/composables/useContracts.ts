@@ -6,7 +6,10 @@ import {
   getContracts,
 } from "~/services/contracts";
 import { ServiceError } from "~/services/http";
-import { notifyStudentChange } from "./useStudentInvalidation";
+import {
+  notifyStudentChange,
+  useStudentInvalidation,
+} from "./useStudentInvalidation";
 import type {
   Contract,
   ContractQuery,
@@ -160,6 +163,7 @@ export function useContracts() {
       saving.value = false;
     }
   }
+  useStudentInvalidation(refresh);
   onScopeDispose(() => {
     controller?.abort();
     detailController?.abort();

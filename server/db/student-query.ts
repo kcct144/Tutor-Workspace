@@ -76,3 +76,19 @@ export function studentFilter(query: StudentQuery) {
     values,
   };
 }
+
+/** Existing selector's bounded ID refresh mode; no search/pagination mixing. */
+export function parseStudentOptionIds(
+  query: Record<string, unknown>,
+): string[] {
+  if (
+    Object.keys(query).some((key) => key !== "ids") ||
+    typeof query.ids !== "string" ||
+    query.ids.length > 2099
+  )
+    throw invalid();
+  const ids = query.ids.split(",").map((id) => parseStudentId({ id }));
+  if (ids.length < 1 || ids.length > 100 || new Set(ids).size !== ids.length)
+    throw invalid();
+  return ids;
+}

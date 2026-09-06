@@ -1,5 +1,8 @@
 import type { H3Event } from "h3";
-import type { ApiResponse } from "../../types/api/students";
+import type {
+  ApiResponse,
+  StudentDuplicateCandidate,
+} from "../../types/api/students";
 
 export class ApiError extends Error {
   statusCode: number;
@@ -8,6 +11,27 @@ export class ApiError extends Error {
     super(message);
     this.statusCode = statusCode;
     this.code = code;
+  }
+}
+
+export class StudentDuplicateError extends ApiError {
+  candidates: StudentDuplicateCandidate[];
+  constructor(candidates: StudentDuplicateCandidate[]) {
+    super(
+      409,
+      "STUDENT_POSSIBLE_DUPLICATE",
+      "发现姓名、学校和班级相同的学生，请核对后明确确认仍要创建。",
+    );
+    // Explicit projection: never serialize an arbitrary database row/error.
+    this.candidates = candidates
+      .slice(0, 5)
+      .map(({ id, name, school, className, status }) => ({
+        id,
+        name,
+        school,
+        className,
+        status,
+      }));
   }
 }
 
@@ -28,6 +52,15 @@ export async function apiResponse<T>(
             "数据服务暂不可用，请检查服务配置后重试。",
           );
     setResponseStatus(event, safe.statusCode);
-    return { status: "error", msg: safe.message, data: { code: safe.code } };
+    return {
+      status: "error",
+      msg: safe.message,
+      data: {
+        code: safe.code,
+        ...(safe instanceof StudentDuplicateError
+          ? { candidates: safe.candidates }
+          : {}),
+      },
+    };
   }
 }

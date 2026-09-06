@@ -3,9 +3,11 @@ import { computed, ref, watch, type VNode } from "vue";
 import type { OptionLoader } from "~/services/contracts";
 const props = defineProps<{ loader: OptionLoader; disabled?: boolean }>();
 const model = defineModel<string[]>({ default: () => [] });
-const { items, keyword, loading, error, hasMore, refresh } = useRemoteOptions(
-  () => props.loader,
-);
+const { items, selected, keyword, loading, error, hasMore, refresh } =
+  useRemoteOptions(
+    () => props.loader,
+    () => model.value,
+  );
 const labels = ref<Record<string, string>>({});
 watch(items, (values) => {
   for (const item of values) labels.value[item.value] = item.label;
@@ -13,7 +15,12 @@ watch(items, (values) => {
 const options = computed(() => [
   ...model.value
     .filter((id) => !items.value.some((item) => item.value === id))
-    .map((id) => ({ value: id, label: labels.value[id] ?? id })),
+    .map((id) => ({
+      value: id,
+      label:
+        selected.value.find((item) => item.value === id)?.label ??
+        (props.loader.selected ? "已选学生 " + id : (labels.value[id] ?? id)),
+    })),
   ...items.value,
 ]);
 const VNodes = (p: { vnodes: VNode }) => p.vnodes;

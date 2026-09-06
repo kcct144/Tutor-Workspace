@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import type { TableColumnType } from "ant-design-vue";
 import { studentGrades, studentStatuses } from "../../../types/api/students";
+import type { StudentDetail } from "../../../types/api/students";
+import { message } from "ant-design-vue";
+const profile = useTemplateRef("profile");
+function saved(student: StudentDetail) {
+  message.success("学生档案已创建");
+  void navigateTo(`/students/${student.id}`);
+}
 
 const {
   items,
@@ -40,9 +47,7 @@ const columns: TableColumnType[] = [
           学员管理 <span>{{ total }}</span>
         </h1>
       </div>
-      <span class="prototype-note"
-        >S4 · 学生、合同、最近跟进与学习计划已接入</span
-      >
+      <AButton type="primary" @click="profile?.begin()">新增学生</AButton>
     </section>
     <section class="students-toolbar">
       <AInput
@@ -132,5 +137,6 @@ const columns: TableColumnType[] = [
         </template>
       </BaseDataTable>
     </section>
+    <StudentProfileDrawer ref="profile" @saved="saved" />
   </div>
 </template>

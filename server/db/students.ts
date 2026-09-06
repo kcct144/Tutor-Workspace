@@ -1,4 +1,4 @@
-import type { PoolConnection, RowDataPacket } from "mysql2/promise";
+import type { Connection, RowDataPacket } from "mysql2/promise";
 import type {
   StudentListItem,
   StudentDetail,
@@ -10,6 +10,7 @@ import { studentFilter } from "./student-query.ts";
 import { ApiError } from "../utils/api.ts";
 import { studentContractAggregates } from "./contracts.ts";
 import { studentPlanTags } from "./study-plans.ts";
+import { maskGuardianPhone } from "./student-profile-rules.ts";
 
 interface StudentRow extends RowDataPacket {
   id: string;
@@ -23,6 +24,7 @@ interface StudentRow extends RowDataPacket {
   created_at: string;
   guardian_name: string | null;
   guardian_phone: string | null;
+  version: number;
   note: string | null;
   owner_id: string | null;
   owner_name: string | null;
@@ -50,7 +52,8 @@ export function toStudentDetail(row: StudentRow): StudentDetail {
     enrolledAt: row.enrolled_at,
     createdAt: row.created_at.replace(" ", "T") + "Z",
     guardianName: row.guardian_name,
-    guardianPhone: row.guardian_phone,
+    guardianPhoneMasked: maskGuardianPhone(row.guardian_phone),
+    version: row.version,
     note: row.note,
     owner: row.owner_id
       ? { id: String(row.owner_id), name: row.owner_name ?? "" }
@@ -58,7 +61,7 @@ export function toStudentDetail(row: StudentRow): StudentDetail {
   };
 }
 export async function listStudents(
-  connection: PoolConnection,
+  connection: Connection,
   query: StudentQuery & { page: number; pageSize: number },
   options = false,
 ): Promise<Page<StudentListItem | StudentOption>> {
@@ -115,11 +118,13 @@ export async function listStudents(
   };
 }
 export async function findStudent(
-  connection: PoolConnection,
+  connection: Connection,
   id: string,
+  currentRead = false,
 ): Promise<StudentDetail> {
   const [rows] = await connection.execute<StudentRow[]>(
-    "SELECT s.id, s.name, s.grade, s.class_name, s.school, s.status, s.gender, s.enrolled_at, s.created_at, s.guardian_name, s.guardian_phone, s.note, u.id AS owner_id, u.name AS owner_name, (SELECT MAX(occurred_on) FROM student_learning_records WHERE student_id=s.id) AS last_follow_up FROM students s LEFT JOIN users u ON u.id = s.owner_user_id WHERE s.id = ? LIMIT 1",
+    "SELECT s.id, s.name, s.grade, s.class_name, s.school, s.status, s.gender, s.enrolled_at, s.created_at, s.guardian_name, s.guardian_phone, s.note, s.version, u.id AS owner_id, u.name AS owner_name, (SELECT MAX(occurred_on) FROM student_learning_records WHERE student_id=s.id) AS last_follow_up FROM students s LEFT JOIN users u ON u.id = s.owner_user_id WHERE s.id = ? LIMIT 1" +
+      (currentRead ? " FOR SHARE" : ""),
     [id],
   );
   if (!rows[0]) throw new ApiError(404, "NOT_FOUND", "未找到学生。");
@@ -130,4 +135,22 @@ export async function findStudent(
     ...aggregates.get(id),
     plans: plans.get(id) ?? [],
   };
+}
+
+export async function studentOptionsByIds(
+  connection: Connection,
+  ids: string[],
+): Promise<Page<StudentOption>> {
+  const [rows] = await connection.execute<StudentRow[]>(
+    "SELECT id,name,grade FROM students WHERE id IN (" +
+      ids.map(() => "?").join(",") +
+      ") ORDER BY id LIMIT 100",
+    ids,
+  );
+  const items = rows.map((row) => ({
+    id: String(row.id),
+    name: row.name,
+    grade: row.grade,
+  }));
+  return { items, total: items.length, page: 1, pageSize: 100 };
 }

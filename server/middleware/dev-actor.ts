@@ -1,6 +1,7 @@
 export default defineEventHandler((event) => {
   if (
     [
+      "/api/students/",
       "/api/contracts/",
       "/api/learning-records/",
       "/api/study-plans/",
