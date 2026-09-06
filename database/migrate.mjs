@@ -4,6 +4,7 @@ import { runDatabaseCommand } from "./connection.mjs";
 import { assertApprovedDatabase, parseMigration } from "../server/db/safety.ts";
 
 const manifest = [
+  // Ordered, explicit migrations only; S6 is not authorized.
   {
     version: "000_schema_migrations",
     tables: ["schema_migrations"],
@@ -29,6 +30,7 @@ const manifest = [
     tables: ["study_plan_documents", "study_plan_students"],
     references: ["users", "students", "study_plan_documents"],
   },
+  { version: "005_tasks", tables: ["tasks"], references: ["users"] },
 ];
 await runDatabaseCommand(async (connection) => {
   const [versionRows] = await connection.query("SELECT VERSION() AS version");

@@ -20,6 +20,8 @@
     "test:s3:api": "node tests/integration/learning-records.mjs",
     "db:seed:plans": "node database/seeds/study-plans.mjs",
     "test:s4:api": "node tests/integration/study-plans.mjs",
+    "db:seed:tasks": "node database/seeds/tasks.mjs",
+    "test:s5:api": "node tests/integration/tasks.mjs",
     "test:s2:api": "node tests/integration/contracts.mjs",
     "test:s1:api": "node tests/integration/students.mjs",
     "postinstall": "nuxt prepare"

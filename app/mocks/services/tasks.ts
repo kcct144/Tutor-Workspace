@@ -1,4 +1,5 @@
 import rawTasks from "../data/tasks.json";
+// TODO (开发负责人，S6验收时移除): 仅任务分配原型使用，S5定义页禁止读取。
 import type { TaskAssignment, TaskDefinition } from "~/types/tasks";
 
 interface TaskMockData {

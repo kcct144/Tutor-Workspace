@@ -1,0 +1,20 @@
+CREATE TABLE tasks (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  owner_user_id BIGINT UNSIGNED NOT NULL,
+  title VARCHAR(160) NOT NULL,
+  subject VARCHAR(64) NOT NULL,
+  description TEXT NOT NULL,
+  status VARCHAR(16) NOT NULL DEFAULT 'enabled',
+  version INT UNSIGNED NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  CONSTRAINT fk_tasks_owner FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT chk_tasks_title CHECK (CHAR_LENGTH(TRIM(title)) BETWEEN 1 AND 160),
+  CONSTRAINT chk_tasks_subject CHECK (CHAR_LENGTH(TRIM(subject)) BETWEEN 1 AND 64),
+  CONSTRAINT chk_tasks_description CHECK (CHAR_LENGTH(TRIM(description)) BETWEEN 1 AND 10000),
+  CONSTRAINT chk_tasks_status CHECK (status IN ('enabled', 'disabled')),
+  CONSTRAINT chk_tasks_version CHECK (version > 0),
+  INDEX idx_tasks_updated (updated_at, id),
+  INDEX idx_tasks_status_updated (status, updated_at, id),
+  INDEX idx_tasks_subject_status (subject, status, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_as_cs;

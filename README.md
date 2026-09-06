@@ -1,12 +1,12 @@
 # 学管师工作台
 
-- 状态：S1–S4已实现，待测试验收
+- 状态：S1–S5已实现，待测试验收
 - 负责人：开发负责人
 - 创建日期：2026-09-05
 - 最后更新日期：2026-09-06
 - 关联需求：S1学生基础、S2合同
 
-S1学生基础、S2合同聚合、S3学习记录及最近跟进、S4学习计划正文及只读学生关联已接入真实MySQL。仅受控开发/测试使用，无登录和权限隔离，**不得公网部署或导入真实人员/学生数据**。任务和首页真实数据接入仍待后续授权。
+S1学生基础、S2合同聚合、S3学习记录及最近跟进、S4学习计划与只读关联、S5任务定义已接入真实MySQL。仅受控开发/测试使用，无登录和权限隔离，**不得公网部署或导入真实人员/学生数据**。任务分配和首页真实数据接入仍待S6授权。
 
 ## 前置依赖
 
@@ -26,7 +26,7 @@ Copy-Item .env.example .env
 复制后，由用户在本机编辑 `.env`，填写已有云端 MySQL 的连接信息，再执行：
 
 ```powershell
-pnpm db:migrate                 # 显式迁移，当前到004_study_plans
+pnpm db:migrate                 # 显式迁移，当前到005_tasks
 pnpm db:seed                    # 可选合成数据装载，非空表不写入
 pnpm dev --host 127.0.0.1       # 仅本机访问，默认3000；被占用时查看启动输出
 ```
@@ -42,13 +42,13 @@ pnpm dev --host 127.0.0.1       # 仅本机访问，默认3000；被占用时查
 - `NUXT_PUBLIC_APP_URL`：浏览器可访问的应用地址。
 - `NUXT_MYSQL_HOST`、`PORT`、`DATABASE`、`USER`、`PASSWORD`：云端 MySQL 连接参数，必须由用户填写。
 - `NUXT_MYSQL_SSL`：云服务要求 TLS 时填 `true`，使用系统信任链验证证书；不支持忽略证书校验。私有 CA 场景先单独配置，不应关闭验证。
-- `DEV_ACTOR_ID`：默认空，由用户把S1种子脚本输出的演示人员ID手工填入。S2写接口从服务端读取并校验人员存在；缺失/无效返回503，不接受浏览器传入，读取接口不依赖此值。
+- `DEV_ACTOR_ID`：默认空，由用户把S1种子脚本输出的演示人员ID手工填入。S2–S5写接口从服务端读取并校验人员存在；缺失/无效返回503，不接受浏览器传入，读取接口不依赖此值。
 - `NUXT_REDIS_URL`：可选 Redis URL；设置后优先于分项参数。
 - `NUXT_REDIS_HOST`、`PORT`、`PASSWORD`、`DB`：可选 Redis 分项参数；未配置时应用不会尝试连接 Redis。
 
 `.env` 已被 Git 忽略。不要把真实配置值粘贴到聊天、文档、截图、日志或提交记录。种子脚本不会修改 `.env`。`DEV_ACTOR_ID` 不是认证，无论是否填值均不得公网开放。Redis位置由环境变量决定，S1不使用Redis。
 
-S1建users、students、schema_migrations；S2新增contracts；S3新增student_learning_records；S4新增study_plan_documents、study_plan_students。使用Node原生能力和已有mysql2显式迁移，不增加ORM/迁移框架。S2–S4写请求均要求有效的服务端DEV_ACTOR_ID。操作权限、失败恢复、数据保留回退详见 [数据库说明](database/README.md)。
+S1建users、students、schema_migrations；S2新增contracts；S3新增student_learning_records；S4新增study_plan_documents、study_plan_students；S5仅新增tasks。使用Node原生能力和已有mysql2显式迁移，不增加ORM/迁移框架。S2–S5写请求均要求有效的服务端DEV_ACTOR_ID。操作权限、失败恢复、数据保留回退详见 [数据库说明](database/README.md)。
 
 ## 常用命令
 
@@ -65,6 +65,7 @@ pnpm db:seed        # 显式合成装载
 pnpm db:seed:contracts  # 显式为已有S1合成学生装载合同；先由用户填写DEV_ACTOR_ID
 pnpm db:seed:records    # 显式最多6条固定学习记录，重复跳过已有记录学生
 pnpm db:seed:plans      # 显式3份固定计划、4条只读关联；已完整装载则不写入
+pnpm db:seed:tasks      # 显式2条固定任务定义，不覆盖已有数据
 # 先启动服务，端口须与启动输出一致；此命令显式只读访问批准库
 $env:S1_API_BASE_URL = 'http://127.0.0.1:3000'
 pnpm test:s1:api
@@ -74,6 +75,9 @@ $env:S3_API_BASE_URL = 'http://127.0.0.1:3000'
 pnpm test:s3:api     # 显式真实学习记录测试，仅复用2条固定验收记录；不删除
 $env:S4_API_BASE_URL = 'http://127.0.0.1:3000'
 pnpm test:s4:api     # 显式复用固定计划正文验收；不创建持久调试文档、不删除
+$env:S5_API_BASE_URL = 'http://127.0.0.1:3000'
+pnpm test:s5:api     # 最多1条固定API验收任务，重复复用；不删除
+node tests/integration/task-actor-api.mjs # 先build；独立本机进程验证无效操作人拒写
 ```
 
 `pnpm test` 不连接数据库。需要格式化时只对当前改动文件运行 Prettier，不顺带格式化无关文件；SQL保持人工审核，不增加格式化依赖。
@@ -96,7 +100,9 @@ docs/               产品、设计与测试文档
 tests/              自动化测试
 ```
 
-TODO（开发负责人；对应切片授权并验收时结束）：首页、任务仍是原型；首页计划区明确后续接入，不使用名称数组兜底。旧学生mock服务仍供任务原型选择器使用，已清空科目/到期兜底。合同及学习计划mock数据/service/type已删除。不以原型ID证明真实数据存在。S5–S6未授权，不提前实施。
+TODO（开发负责人；S6验收时结束）：首页和任务分配仍是独立原型；旧学生和任务mock仍供分配原型使用，不供/tasks真实定义页读取。首页计划区明确后续接入，不使用名称数组兜底。S6未授权，不提前实施。
+
+S5任务定义已接入真实列表/详情/新增/编辑/启停，默认启用且只有启用/停用；分配人数API固定0，无分配表。科目选项独立分页搜索，写操作必须有服务端DEV_ACTOR_ID。文件清单、测试及回退见[S5交付报告](docs/test/s5-task-definitions-delivery.md)。
 
 S4保留计划左右布局，支持搜索分页、按需详情、安全Markdown预览及仅正文编辑；学生标签使用真实计划ID。同名计划不合并，无新建/删除/关系管理。详见[S4交付报告](docs/test/s4-study-plans-delivery.md)。真实API测试会修改固定演示正文并恢复，应独占执行；种子和测试均不读取mock JSON、不修改.env。
 
