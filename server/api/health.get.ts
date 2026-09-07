@@ -1,14 +1,8 @@
-export default defineEventHandler(() => {
-  const config = useRuntimeConfig();
+export default defineEventHandler((event) => {
+  setResponseHeader(event, "Cache-Control", "no-store");
   return {
     status: "ok",
     msg: "成功",
-    data: {
-      app: "ok",
-      mysqlConfigured: Boolean(
-        config.mysql.host && config.mysql.database && config.mysql.user,
-      ),
-      redisConfigured: Boolean(config.redis.url || config.redis.host),
-    },
+    data: { app: "ok" },
   };
 });

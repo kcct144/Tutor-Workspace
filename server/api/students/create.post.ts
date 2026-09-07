@@ -1,7 +1,7 @@
 import { withDatabase, inTransaction } from "../../db/pool";
 import { createStudent } from "../../db/student-profile";
 import { parseStudentCreate } from "../../db/student-profile-rules";
-import { requireDevActor } from "../../db/dev-actor";
+import { requireActiveAuth } from "../../auth/context";
 import { apiResponse } from "../../utils/api";
 import { jsonBody } from "../../utils/json-body";
 export default defineEventHandler((event) =>
@@ -9,7 +9,7 @@ export default defineEventHandler((event) =>
     const input = parseStudentCreate(await jsonBody(event, 16384));
     const result = await withDatabase(useRuntimeConfig(event).mysql, (db) =>
       inTransaction(db, async () => {
-        await requireDevActor(db, event.context.devActorId);
+        await requireActiveAuth(db, event);
         return createStudent(db, input);
       }),
     );

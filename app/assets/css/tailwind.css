@@ -82,6 +82,15 @@ body {
   color: #d4dfd8;
   font-size: 13px;
 }
+.header-role {
+  padding-left: 5px;
+  color: #8d9a90;
+}
+.header-user .ant-btn-link {
+  padding: 0 0 0 8px;
+  color: #5e8a67;
+  font-size: 12px;
+}
 .status-dot {
   width: 7px;
   height: 7px;
@@ -1399,5 +1408,76 @@ h1 span {
   }
   .task-assignment-task-filter {
     min-width: 0;
+  }
+}
+
+.login-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  background: radial-gradient(circle at top, #e6efe2 0, #f4f5f1 48%);
+}
+.login-card {
+  width: min(100%, 400px);
+  padding: 36px;
+  border: 1px solid #e1e8df;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 16px 42px rgba(31, 49, 38, 0.1);
+}
+.login-brand {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  margin-bottom: 22px;
+  border-radius: 10px;
+  color: #1d2d28;
+  background: #b8d8b0;
+  font-size: 17px;
+  font-weight: 800;
+}
+.login-card h1 {
+  margin: 0;
+  color: #26362d;
+  font-size: 25px;
+  letter-spacing: -0.03em;
+}
+.login-card > p:last-of-type {
+  margin: 9px 0 24px;
+  color: #728078;
+  font-size: 13px;
+}
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.login-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #607068;
+  font-size: 12px;
+}
+.login-form .ant-input,
+.login-form .ant-input-affix-wrapper,
+.login-form .ant-btn {
+  height: 38px;
+  border-radius: 7px;
+}
+.login-form .ant-btn {
+  margin-top: 3px;
+}
+@media (max-width: 375px) {
+  .login-page {
+    padding: 16px;
+  }
+  .login-card {
+    padding: 27px 21px;
+  }
+  .login-card h1 {
+    font-size: 22px;
   }
 }

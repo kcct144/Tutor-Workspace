@@ -1,7 +1,7 @@
 import { withDatabase, inTransaction } from "../../db/pool";
 import { createRecord } from "../../db/learning-records";
 import { parseRecordWrite } from "../../db/learning-record-rules";
-import { requireDevActor } from "../../db/dev-actor";
+import { requireActiveAuth } from "../../auth/context";
 import { apiResponse } from "../../utils/api";
 import { jsonBody } from "../../utils/json-body";
 export default defineEventHandler((event) =>
@@ -9,11 +9,7 @@ export default defineEventHandler((event) =>
     const input = parseRecordWrite(await jsonBody(event, 131072));
     const result = await withDatabase(useRuntimeConfig(event).mysql, (db) =>
       inTransaction(db, async () =>
-        createRecord(
-          db,
-          input,
-          await requireDevActor(db, event.context.devActorId),
-        ),
+        createRecord(db, input, (await requireActiveAuth(db, event)).userId),
       ),
     );
     setResponseStatus(event, 201);

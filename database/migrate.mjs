@@ -3,6 +3,9 @@ import { createHash } from "node:crypto";
 import { runDatabaseCommand } from "./connection.mjs";
 import {
   assertApprovedDatabase,
+  parseAuthAccountsMigration,
+  parseAuthSessionsMigration,
+  parseAuthorizationAuditMigration,
   parseMigration,
   parseStudentVersionMigration,
 } from "../server/db/safety.ts";
@@ -42,7 +45,44 @@ const manifest = [
     references: ["tasks", "students", "users"],
   },
   { version: "007_students_version", tables: [], references: [] },
+  { version: "008_auth_accounts", tables: ["user_accounts"], references: [] },
+  { version: "009_auth_sessions", tables: ["auth_sessions"], references: [] },
+  {
+    version: "010_authorization_audit",
+    tables: ["audit_logs"],
+    references: [],
+  },
 ];
+
+function parseApprovedMigration(version, sql, tables, references) {
+  if (version === "007_students_version")
+    return parseStudentVersionMigration(sql);
+  if (version === "008_auth_accounts") return parseAuthAccountsMigration(sql);
+  if (version === "009_auth_sessions") return parseAuthSessionsMigration(sql);
+  if (version === "010_authorization_audit")
+    return parseAuthorizationAuditMigration(sql);
+  return parseMigration(sql, tables, references);
+}
+
+async function checkAuthorizationAuditIndex(connection, applied) {
+  await assertApprovedDatabase(connection);
+  const [rows] = await connection.execute(
+    "SELECT SEQ_IN_INDEX,COLUMN_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND INDEX_NAME=? ORDER BY SEQ_IN_INDEX LIMIT 4",
+    ["students", "idx_students_owner_status"],
+  );
+  const columns = rows.map((row) => String(row.COLUMN_NAME));
+  const expected = ["owner_user_id", "status", "id"];
+  if (!applied) {
+    if (columns.length)
+      throw new Error("发现未登记的学生权限索引，停止人工核对。");
+    return;
+  }
+  if (
+    columns.length !== expected.length ||
+    columns.some((column, index) => column !== expected[index])
+  )
+    throw new Error("学生权限索引不符合批准定义。");
+}
 await runDatabaseCommand(async (connection) => {
   const [versionRows] = await connection.query("SELECT VERSION() AS version");
   const match = /^(\d+)\.(\d+)\.(\d+)/.exec(versionRows[0].version);
@@ -74,10 +114,7 @@ await runDatabaseCommand(async (connection) => {
           version,
           tables,
           checksum: createHash("sha256").update(sql).digest("hex"),
-          statements:
-            version === "007_students_version"
-              ? parseStudentVersionMigration(sql)
-              : parseMigration(sql, tables, references),
+          statements: parseApprovedMigration(version, sql, tables, references),
         };
       }),
     );
@@ -106,6 +143,8 @@ await runDatabaseCommand(async (connection) => {
           }
           if (migration.version === "007_students_version")
             await checkStudentVersion(connection, true);
+          if (migration.version === "010_authorization_audit")
+            await checkAuthorizationAuditIndex(connection, true);
           console.log(migration.version + " 已应用，跳过。");
           continue;
         }
@@ -118,12 +157,16 @@ await runDatabaseCommand(async (connection) => {
       }
       if (migration.version === "007_students_version")
         await checkStudentVersion(connection, false);
+      if (migration.version === "010_authorization_audit")
+        await checkAuthorizationAuditIndex(connection, false);
       for (const statement of migration.statements) {
         await assertApprovedDatabase(connection);
         await connection.query(statement);
       }
       if (migration.version === "007_students_version")
         await checkStudentVersion(connection, true);
+      if (migration.version === "010_authorization_audit")
+        await checkAuthorizationAuditIndex(connection, true);
       await assertApprovedDatabase(connection);
       await connection.execute(
         "INSERT INTO schema_migrations (version, checksum) VALUES (?, ?)",

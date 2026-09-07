@@ -4,7 +4,7 @@ import { assertApprovedDatabase } from "./safety.ts";
 export async function executeWrite(
   connection: Connection,
   sql: string,
-  values: (string | number | null)[],
+  values: (string | number | Buffer | null)[],
 ) {
   await assertApprovedDatabase(connection);
   const [result] = await connection.execute<ResultSetHeader>(sql, values);

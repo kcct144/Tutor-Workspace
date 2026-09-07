@@ -1,7 +1,7 @@
 import { withDatabase, inTransaction } from "../../db/pool";
 import { createContract } from "../../db/contracts";
 import { parseContractWrite } from "../../db/contracts-rules";
-import { requireDevActor } from "../../db/dev-actor";
+import { requireActiveAuth } from "../../auth/context";
 import { apiResponse } from "../../utils/api";
 import { jsonBody } from "../../utils/json-body";
 export default defineEventHandler((event) =>
@@ -14,7 +14,7 @@ export default defineEventHandler((event) =>
           createContract(
             connection,
             input,
-            await requireDevActor(connection, event.context.devActorId),
+            (await requireActiveAuth(connection, event)).userId,
           ),
         ),
     );

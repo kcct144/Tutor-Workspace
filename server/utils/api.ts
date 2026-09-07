@@ -35,6 +35,18 @@ export class StudentDuplicateError extends ApiError {
   }
 }
 
+/** Returns the project-wide safe JSON error envelope outside route handlers too. */
+export function apiErrorResponse(
+  event: H3Event,
+  statusCode: number,
+  code: string,
+  message: string,
+): ApiResponse<never> {
+  setResponseHeader(event, "Cache-Control", "no-store");
+  setResponseStatus(event, statusCode);
+  return { status: "error", msg: message, data: { code } };
+}
+
 export async function apiResponse<T>(
   event: H3Event,
   action: () => Promise<T>,
@@ -51,16 +63,13 @@ export async function apiResponse<T>(
             "STORAGE_UNAVAILABLE",
             "数据服务暂不可用，请检查服务配置后重试。",
           );
+    if (!(safe instanceof StudentDuplicateError))
+      return apiErrorResponse(event, safe.statusCode, safe.code, safe.message);
     setResponseStatus(event, safe.statusCode);
     return {
       status: "error",
       msg: safe.message,
-      data: {
-        code: safe.code,
-        ...(safe instanceof StudentDuplicateError
-          ? { candidates: safe.candidates }
-          : {}),
-      },
+      data: { code: safe.code, candidates: safe.candidates },
     };
   }
 }

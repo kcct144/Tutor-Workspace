@@ -17,9 +17,10 @@ Use this skill as the tool-independent entry routine for Codex, Claude Code, DSH
 
 ## Route the request
 
-- Planning or business-rule changes belong in `docs/prd/` or `docs/design/` and stop before implementation until confirmed.
-- Prototype work uses the existing mock/service boundary and must not silently create real persistence.
-- Real implementation follows a vertical slice: migration, API, UI integration, self-test, then independent test.
+- Default to two conversations: development and student-data operations.
+- Development handles planning when rules are unclear, then implements code, scripts, skills, and relevant self-tests in one flow.
+- Independent testing is optional and happens only when the user asks for it or the change warrants it.
+- Real implementation follows a vertical slice: migration, API, UI integration, and self-test.
 - Student data maintenance uses `skills/student-data-operations/SKILL.md` and the versioned scripts; do not improvise SQL.
 
 ## Hard stops
@@ -27,5 +28,5 @@ Use this skill as the tool-independent entry routine for Codex, Claude Code, DSH
 - Never reveal `.env`, credentials, full contact values, or driver stack traces.
 - Never operate outside the approved `tutor_workspace` database.
 - Never physically delete student data or run a clear/reset command.
-- Do not infer permissions from `DEV_ACTOR_ID`; the current app is not safe for real or public use.
+- Do not infer permissions from `DEV_ACTOR_ID`; the current app is for a user-controlled local session and must not be exposed publicly.
 - Do not commit, push, install dependencies, or expand scope unless the user explicitly authorizes it.

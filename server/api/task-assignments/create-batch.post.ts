@@ -1,7 +1,7 @@
 import { withDatabase, inTransaction } from "../../db/pool";
 import { parseAssignmentBatch } from "../../db/assignment-rules";
 import { createAssignmentBatch } from "../../db/task-assignments";
-import { requireDevActor } from "../../db/dev-actor";
+import { requireActiveAuth } from "../../auth/context";
 import { apiResponse } from "../../utils/api";
 import { jsonBody } from "../../utils/json-body";
 export default defineEventHandler((event) =>
@@ -12,7 +12,7 @@ export default defineEventHandler((event) =>
         createAssignmentBatch(
           db,
           input,
-          await requireDevActor(db, event.context.devActorId),
+          (await requireActiveAuth(db, event)).userId,
         ),
       ),
     );

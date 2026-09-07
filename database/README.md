@@ -30,13 +30,14 @@
 pnpm db:migrate
 ```
 
-固定清单：`000_schema_migrations.sql` → `001_students.sql` → `002_contracts.sql` → `003_learning_records.sql` → `004_study_plans.sql` → `005_tasks.sql`。按版本限制允许创建的表与外键引用，禁止任意SQL输入；每次DDL/登记写入前校验目标库。MySQL 8.0.16+，InnoDB/utf8mb4；成功才登记版本与SHA-256校验和。连接级执行锁防迁移并发，重复执行匹配后跳过。
+固定清单：`000_schema_migrations.sql` → `001_students.sql` → `002_contracts.sql` → `003_learning_records.sql` → `004_study_plans.sql` → `005_tasks.sql` → `006_task_assignments.sql` → `007_students_version.sql` → `008_auth_accounts.sql` → `009_auth_sessions.sql` → `010_authorization_audit.sql`。按版本限制允许创建的表、外键与 S8.1 唯一批准的学生负责人范围索引，禁止任意SQL输入；每次DDL/登记写入前校验目标库。MySQL 8.0.16+，InnoDB/utf8mb4；成功才登记版本与SHA-256校验和。连接级执行锁防迁移并发，重复执行匹配后跳过。
 
 - `schema_migrations`：版本主键、校验和、应用时间。
 - `users`：人员主键、非空姓名、时间；无登录信息，仅演示人员引用。
 - `students`：基本信息、可空负责人/性别；FK到users且RESTRICT；年级/状态/性别/姓名CHECK；筛选与负责人索引。不建未来领域表，无删除接口。
 - `contracts`：仅S2合同，编号唯一、学生/人员FK、类型字段互斥CHECK、version、科目与学生日期索引。编号不可经API修改。无历史审计/删除。
 - `student_learning_records`：仅S3学习记录，学生/作者FK，缺/补/强、正文长度和版本CHECK，日期/分类/创建时间分页索引；无删除、历史版本、审计字段。运行账号只需该表SELECT/INSERT/UPDATE，不需要DELETE。
+- `user_accounts`、`auth_sessions`、`audit_logs`：仅 S8.1 的账号、MySQL 不透明会话与追加式审计数据底座。迁移不创建账号、管理员、人员或历史审计，不修改既有业务外键；S8.2 前不启用登录 API、Cookie、中间件或业务鉴权。初始管理员只能由授权操作者在本机 TTY 运行 `pnpm db:init-admin -- --apply --confirm` 手工建立，密码隐藏输入且不读取 `DEV_ACTOR_ID`。
 
 迁移账号需批准库内CREATE、REFERENCES、SELECT、INSERT及相应函数能力。S1读API只需SELECT；S2运行合同写API另需contracts的INSERT/UPDATE。不要求全局/跨库权限、不自动改账号或授权。
 

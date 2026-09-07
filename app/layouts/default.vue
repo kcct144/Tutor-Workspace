@@ -1,10 +1,23 @@
 <script setup lang="ts">
 const route = useRoute();
+const { user, signOut } = useAuth();
+const loggingOut = ref(false);
+
+async function logout() {
+  if (loggingOut.value) return;
+  loggingOut.value = true;
+  try {
+    await signOut();
+    await navigateTo("/login");
+  } finally {
+    loggingOut.value = false;
+  }
+}
 </script>
 
 <template>
   <ALayout class="app-shell">
-    <ALayoutHeader class="app-header">
+    <ALayoutHeader v-if="route.path !== '/login'" class="app-header">
       <div class="header-inner">
         <NuxtLink to="/" class="brand-mark" aria-label="学管师工作台">
           <span class="brand-symbol">学</span>
@@ -48,7 +61,17 @@ const route = useRoute();
           >
         </nav>
         <div class="header-user">
-          <span class="status-dot" />开发测试 · 无登录
+          <span class="status-dot" />{{ user?.username ?? "正在读取登录状态" }}
+          <span class="header-role">{{
+            user?.role === "admin" ? "管理员" : "学管师"
+          }}</span>
+          <AButton
+            type="link"
+            size="small"
+            :loading="loggingOut"
+            @click="logout"
+            >退出</AButton
+          >
         </div>
       </div>
     </ALayoutHeader>
