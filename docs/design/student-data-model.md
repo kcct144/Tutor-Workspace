@@ -1,6 +1,6 @@
 # 学生数据模型与档案维护（S1–S6 查询 + S7 档案维护）
 
-- 状态：已确认（现有 S1–S6 数据模型已实现；S7 学生档案写模型已裁决）
+- 状态：已确认（现有 S1–S6 数据模型已实现；S7 写模型与体验学生规则已裁决）
 - 负责人：产品经理兼数据库设计负责人
 - 创建日期：2026-09-05
 - 最后更新日期：2026-09-06
@@ -10,23 +10,23 @@
 
 学生表使用 InnoDB、utf8mb4，BIGINT UNSIGNED 主键，API 以十进制 string 传输；日期为 DATE，时间为 UTC `DATETIME(3)`。不存在软删除字段、删除接口或级联删除；所有外键采用 `ON DELETE/UPDATE RESTRICT`。
 
-| 字段           | 类型与约束                                  | 档案维护说明                       |
-| -------------- | ------------------------------------------- | ---------------------------------- |
-| id             | BIGINT UNSIGNED，自增 PK                    | 服务端生成，只读                   |
-| owner_user_id  | BIGINT UNSIGNED NULL，FK users.id，RESTRICT | 当前负责人，只读；新增为空         |
-| name           | VARCHAR(64) NOT NULL                        | trim 后 1–64 个 Unicode 字符       |
-| grade          | VARCHAR(16) NOT NULL                        | 仅初一、初二、初三、高一、高二     |
-| class_name     | VARCHAR(32) NULL                            | 可空                               |
-| school         | VARCHAR(128) NULL                           | 可空                               |
-| gender         | VARCHAR(8) NULL                             | 非空时仅男/女                      |
-| enrolled_at    | DATE NULL                                   | 可空；服务端校验合法日期           |
-| guardian_name  | VARCHAR(64) NULL                            | 可空                               |
-| guardian_phone | VARCHAR(32) NULL                            | 可空；服务端校验格式，原值保存     |
-| note           | VARCHAR(500) NULL                           | 可空                               |
-| status         | VARCHAR(16) NOT NULL                        | 仅在读、待分配、已结课             |
-| created_at     | DATETIME(3) NOT NULL                        | 服务端生成，只读                   |
-| updated_at     | DATETIME(3) NOT NULL                        | 每次成功档案/状态修改更新          |
-| version        | INT UNSIGNED NOT NULL DEFAULT 1，CHECK > 0  | 乐观锁版本，新增/更新/状态更新返回 |
+| 字段           | 类型与约束                                  | 档案维护说明                               |
+| -------------- | ------------------------------------------- | ------------------------------------------ |
+| id             | BIGINT UNSIGNED，自增 PK                    | 服务端生成，只读                           |
+| owner_user_id  | BIGINT UNSIGNED NULL，FK users.id，RESTRICT | 当前负责人，只读；新增为空                 |
+| name           | VARCHAR(64) NOT NULL                        | trim 后 1–64 个 Unicode 字符               |
+| grade          | VARCHAR(16) NULL                            | 可空；非空时仅初一、初二、初三、高一、高二 |
+| class_name     | VARCHAR(32) NULL                            | 可空                                       |
+| school         | VARCHAR(128) NULL                           | 可空                                       |
+| gender         | VARCHAR(8) NULL                             | 非空时仅男/女                              |
+| enrolled_at    | DATE NULL                                   | 可空；服务端校验合法日期                   |
+| guardian_name  | VARCHAR(64) NULL                            | 可空                                       |
+| guardian_phone | VARCHAR(32) NULL                            | 可空；服务端校验格式，原值保存             |
+| note           | VARCHAR(500) NULL                           | 可空                                       |
+| status         | VARCHAR(16) NOT NULL                        | 仅在读、待分配、已结课                     |
+| created_at     | DATETIME(3) NOT NULL                        | 服务端生成，只读                           |
+| updated_at     | DATETIME(3) NOT NULL                        | 每次成功档案/状态修改更新                  |
+| version        | INT UNSIGNED NOT NULL DEFAULT 1，CHECK > 0  | 乐观锁版本，新增/更新/状态更新返回         |
 
 现有索引 `(grade,status,id)`、`(owner_user_id,id)` 和主键继续保留。姓名、学校、班级和联系方式不建立唯一约束，允许同名学生、兄弟姐妹和转学生共存。新增 `version` 不改变外键关系，也不新增 owner 或审计字段。
 
@@ -49,7 +49,7 @@
 `POST /api/students/create` 只写 `students` 一行。请求允许：
 
 ```text
-name, grade, school?, className?, gender?, enrolledAt?,
+name, grade?, school?, className?, gender?, enrolledAt?,
 guardianName?, guardianPhone?, note?, confirmPossibleDuplicate?
 ```
 
@@ -79,7 +79,7 @@ guardianName, guardianPhone, note, version
 ## 4. 约束与校验
 
 - 姓名 trim 后非空且最多 64 个 Unicode 字符。
-- 年级为固定枚举；性别为空或男/女。
+- 姓名是新增、编辑时唯一必填的档案字段。年级可空；非空时为固定枚举；性别为空或男/女。
 - 学校最多 128、班级最多 32、监护人姓名最多 64、备注最多 500 个 Unicode 字符。
 - 联系方式 trim 后为空或最多 32 字符；允许数字、空格、`+`、`-`、括号，至少包含 6 位数字；不强制限定为大陆手机号。
 - 入学日期为空或 `1900-01-01` 至服务端 Asia/Shanghai 当天；不接受浏览器日期作为权威“今天”。
@@ -103,8 +103,7 @@ S7 批准使用 `version`，新增迁移文件 `database/migrations/007_students
 
 - 编辑和状态更新使用 `expectedVersion` 乐观锁；旧版本统一 409，前端保留草稿并提示重载，不自动覆盖。
 - 同一学生的档案编辑和状态更新共享 version，任一成功都会使另一窗口的旧草稿冲突。
-- 无登录阶段由服务端环境变量 `DEV_ACTOR_ID` 产生开发操作上下文，用于请求校验和结构化日志；浏览器不得传 actorId、ownerUserId 或 author 字段。
-- 本模块不新增 `created_by/updated_by` 和审计表，不能把 DEV_ACTOR_ID 解释为真实权限。未来接入鉴权时替换上下文来源并映射现有 users；操作历史归后续权限/审计模块，不在本轮处理。
+- 服务端从当前登录会话取得操作上下文；浏览器不得传 actorId、ownerUserId 或 author 字段。
 - 联系方式原值仅在受控环境通过 `StudentEditView` 用于编辑；列表与详情只返回脱敏值。真实用户试用前必须由鉴权方案替换该明文回填边界。
 
 ## 7. 关系保护与状态影响
@@ -132,3 +131,8 @@ S7 批准使用 `version`，新增迁移文件 `database/migrations/007_students
 - 沿用公共错误码：404 `NOT_FOUND`、409 `VERSION_CONFLICT`、413 `PAYLOAD_TOO_LARGE`、503 `DEV_ACTOR_UNAVAILABLE` / `STORAGE_UNAVAILABLE`；400 仍为 `VALIDATION_ERROR`，重复提示为 `STUDENT_POSSIBLE_DUPLICATE`。不新增等价错误体系。
 - 学生列表不查询或返回联系方式，包括脱敏字段；详情及创建/更新/状态成功响应返回 `guardianPhoneMasked`。仅编辑回填 `GET /api/students/edit` 返回原值 `guardianPhone`，维持 no-store。DTO 分离不是身份授权，只限受控合成环境。
 - 独立验收报告保留原始证据，以上为本次契约裁决，不追溯篡改测试结论。
+
+## 2026-09-07 已确认：体验学生资料
+
+- 学生姓名是唯一必填字段；年级、学校、班级、性别、入学日期、监护人姓名、联系方式和备注均可省略或明确清空。年级未知以 `NULL` 表示，页面显示“年级待确认”，不另建“未知”枚举。
+- `011_experience_students_trial_contracts.sql` 只将 `students.grade` 调整为可空并收紧其非空值检查；不变更任何既有学生值、关联关系或负责人。

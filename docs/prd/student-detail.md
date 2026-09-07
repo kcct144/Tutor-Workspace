@@ -72,7 +72,7 @@
 - `PATCH /api/students/update`：`{id,expectedVersion,name,grade,school?,className?,gender?,enrolledAt?,guardianName?,guardianPhone?,note?}`；拒绝 status、owner 和聚合字段。
 - `PATCH /api/students/status`：`{id,expectedVersion,status}`；仅更新状态和版本，不触碰关联表。
 
-统一响应为 `{status,msg,data}`。写操作人不由浏览器传入，服务端从 `DEV_ACTOR_ID` 上下文取得；无登录阶段不实现权限隔离或操作审计。
+统一响应为 `{status,msg,data}`。写操作人不由浏览器传入，服务端从当前网页登录会话取得。
 
 ## 6. 可测试验收标准
 

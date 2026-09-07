@@ -57,7 +57,7 @@ await runDatabaseCommand(async (connection) => {
       await assertApprovedDatabase(connection);
       await connection.commit();
       console.log("已显式装载12名合成演示学生。");
-      console.log("演示人员ID（请手工填写本机 DEV_ACTOR_ID）：" + actorId);
+      console.log("合成人员已建立：" + actorId);
     } catch (error) {
       await connection.rollback();
       throw error;

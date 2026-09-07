@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { requireDevActor } from "../../server/db/dev-actor.ts";
+import { resolveSeedAdministrator } from "../../server/db/seed-actor.ts";
 export const taskFixtures = [
   {
     title: "S5标准任务甲",
@@ -26,7 +26,7 @@ export const browserTask = {
   description: "S5固定浏览器验收说明。",
 };
 export async function taskActor(db) {
-  const id = await requireDevActor(db, process.env.DEV_ACTOR_ID);
+  const id = await resolveSeedAdministrator(db);
   const [rows] = await db.execute("SELECT name FROM users WHERE id=? LIMIT 1", [
     id,
   ]);

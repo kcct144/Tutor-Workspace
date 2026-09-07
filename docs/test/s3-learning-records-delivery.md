@@ -38,7 +38,7 @@ DTO仅id/studentId/category/content/occurredOn/author{id,name}/createdAt/updated
 
 正文trim后按Unicode码点计1–10000字，支持10000个补充平面字符；JSON请求技术限制128KiB，合同仍保持原16KiB限制。日期必须真实有效且不晚于服务端Asia/Shanghai当天；分类仅三种；未知字段一律拒绝。
 
-新增studentId是目标学生选择，不是作者或权限凭据；由服务端确认学生存在后绑定。浏览器不能提供author/authorUserId/actorId/version等字段；编辑也拒绝studentId。作者始终保留原始服务端DEV_ACTOR_ID，不因编辑改变；编辑SQL只写分类、正文、发生日期、updated_at和递增version。旧版本条件更新0行时返回409，不盲重试。
+新增studentId是目标学生选择，不是作者或权限凭据；由服务端确认学生存在后绑定。浏览器不能提供author/authorUserId/actorId/version等字段；编辑也拒绝studentId。作者保留原始创建人，不因编辑改变；编辑SQL只写分类、正文、发生日期、updated_at和递增version。旧版本条件更新0行时返回409，不盲重试。
 
 本轮无登录/权限隔离：“不能重新绑定学生”不等于“用户只能访问某学生”。受控开发环境中知道合法记录ID即可按API编辑，这是已批准边界，不得公网部署或导入真实学生数据。
 
@@ -72,7 +72,7 @@ DTO仅id/studentId/category/content/occurredOn/author{id,name}/createdAt/updated
 
 ## 迁移、种子、启动与复验命令
 
-现有.env不需要新增变量；用户自行配置云端MySQL及DEV_ACTOR_ID，不将值发送到聊天或文档。迁移和种子仅显式执行：
+现有.env不需要新增变量；用户自行配置云端MySQL，不将值发送到日志或文档。迁移和种子仅显式执行：
 
 ```powershell
 pnpm db:migrate
@@ -103,7 +103,6 @@ pnpm build
 | server/db/learning-record-rules.ts、learning-records.ts                  | 服务端校验、参数化查询、分页、投影与版本写入             |
 | server/api/learning-records/list.get.ts、create.post.ts、update.patch.ts | 三个记录API，统一错误及事务                              |
 | server/db/students.ts                                                    | 最近跟进聚合和列表排序，不写学生表                       |
-| server/middleware/dev-actor.ts                                           | 记录写接口复用服务端操作人上下文                         |
 | server/utils/json-body.ts                                                | 将合同有界JSON读取工具泛化复用；原contract-body.ts已移除 |
 | server/api/contracts/create.post.ts、update.patch.ts                     | 仅适配共用JSON读取，保持合同16KiB限制及业务规则          |
 | app/services/learning-records.ts                                         | 记录API及显式冲突重载边界                                |
@@ -125,7 +124,7 @@ pnpm build
 
 1. 先停学习记录写入口，回退记录区域、学生最近跟进聚合/排序和相关应用代码；保留student_learning_records、迁移台账和所有数据，不提供自动down、删除或清理。不要把回退后的mock/空字段描述为真实记录。
 2. DDL隐式提交；003建表成功而登记失败必须停止人工核对，不自动删表、重建或伪造校验和。任何数据清理另行取得总指挥授权。
-3. DEV_ACTOR_ID不是认证；不做角色隔离/编辑审计，原作者保留但不记录历次修改人。无删除、恢复或历史版本。
+3. 原作者保留但不记录历次修改人。无删除、恢复或历史版本。
 4. POST不自动重试；网络结果不明须先刷新核对，MVP无幂等回执。固定脚本的有界性不是普通创建接口的去重规则。
 5. 列表最近跟进排序需要聚合记录；当前用索引与单查询JOIN满足MVP，不引入缓存。未来数据量增长时再基于执行计划优化，不能通过LIMIT裁断聚合导致错误排序。
 6. 构建依赖仍有DEP0155弃用、插件耗时提示，均非阻塞；未为消除提示升级依赖。依赖版本未变：Nuxt4.5.2、Vue3.5.42、Ant Design Vue4.2.6、mysql2 3.24.3、TypeScript6.0.3、Vitest4.1.11；Redis不参与S3。

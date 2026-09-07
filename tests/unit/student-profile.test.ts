@@ -47,6 +47,10 @@ describe("S7 profile validation", () => {
       parseStudentCreate({ ...minimal, name: " " + "𠮷".repeat(64) + " " })
         .name,
     ).toHaveLength(128);
+    expect(parseStudentCreate({ name: "年级待确认学生" })).toMatchObject({
+      name: "年级待确认学生",
+      grade: null,
+    });
     expect(
       parseStudentCreate({
         ...minimal,

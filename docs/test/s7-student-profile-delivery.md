@@ -25,7 +25,7 @@
 | `server/db/students.ts`、`server/db/student-query.ts`                                                                              | 详情 version/脱敏投影；有界已选 ID 标签查询；同状态成功响应使用当前读，避免事务旧快照          |
 | `server/api/students/create.post.ts`、`edit.get.ts`、`update.patch.ts`、`status.patch.ts`                                          | 四个 S7 API，统一 no-store envelope、事务、开发操作人校验                                      |
 | `server/api/students/options.get.ts`                                                                                               | 保留原分页搜索；补充已选 ID 批量刷新模式                                                       |
-| `server/middleware/dev-actor.ts`、`server/utils/api.ts`                                                                            | 复用学生写上下文；仅增加受控重复候选错误，不暴露任意错误数据                                   |
+| `server/utils/api.ts`                                                                                                              | 受控重复候选错误，不暴露任意错误数据                                                           |
 | `types/api/students.ts`                                                                                                            | 编辑/写入/状态/候选 DTO，详情仅 guardianPhoneMasked，列表继续不含联系方式                      |
 | `app/services/students.ts`、`http.ts`、`contracts.ts`                                                                              | 请求集中封装；重复错误识别；远程学生标签批量解析                                               |
 | `app/composables/useStudentProfile.ts`、`useStudentStatus.ts`                                                                      | 保存禁用、失败/冲突草稿、明确重载、未知结果阻止直接重发                                        |
@@ -37,7 +37,7 @@
 | `app/types/components.d.ts`                                                                                                        | 现有组件自动导入生成的两项声明                                                                 |
 | `tests/unit/student-profile.test.ts`、`student-profile-state.test.ts`、`student-profile-refresh.test.ts`、`contract-state.test.ts` | 新规则、迁移范围、版本/投影/草稿/失效覆盖，更新既有失效 mock                                   |
 | `tests/integration/student-profiles.mjs`                                                                                           | 严格固定数据验收，不累积随机数据；首次创建跳过逐项标注                                         |
-| `tests/integration/student-profile-boundary.mjs`、`student-profile-actor.mjs`                                                      | 数据保护指纹、构建产物空/无效 DEV_ACTOR 验证                                                   |
+| `tests/integration/student-profile-boundary.mjs`                                                                                   | 数据保护指纹                                                                                   |
 | `docs/design/s7-student-profile-implementation.md`、本报告                                                                         | 实施进度、样例预算、交付证据与限制                                                             |
 
 ## 3. 契约与实现口径
@@ -63,7 +63,6 @@ pnpm typecheck
 pnpm lint
 pnpm test
 pnpm build
-node tests/integration/student-profile-actor.mjs
 node tests/integration/api-route-boundary.mjs
 node tests/integration/api-route-built.mjs
 ```

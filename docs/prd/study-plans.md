@@ -22,7 +22,7 @@
 
 列表DTO：id、title、summary（可null）、updatedAt、version。详情另含content、createdAt、owner:{id,name}。ID十进制string，时间UTC，统一{status,msg,data}与no-store。排序updated_at DESC/id DESC。关键词对标题、摘要、正文做参数化LIKE，转义%/_等通配符；所有列表/搜索/关联查询有LIMIT，按学生页ID批量聚合，禁止N+1。
 
-正文按trim后Unicode码点计1–100000字符，但保存完整原字符串（含首尾空白、缩进、换行），不把trim后的内容入库。JSON传输上限2MiB以覆盖转义Unicode文本，超限413。未知字段/非法分页/空或超长正文400，不存在404，旧版本409并保留草稿，存储/开发操作人配置异常503。不接受owner、ownerUserId、actor、actorId、title、summary或version等写字段。服务器验证DEV_ACTOR_ID存在，不改变原负责人，不建立审计历史；没有用户身份或权限隔离，不得公网部署。
+正文按trim后Unicode码点计1–100000字符，但保存完整原字符串（含首尾空白、缩进、换行），不把trim后的内容入库。JSON传输上限2MiB以覆盖转义Unicode文本，超限413。未知字段/非法分页/空或超长正文400，不存在404，旧版本409并保留草稿，存储或会话异常503。不接受owner、ownerUserId、actor、actorId、title、summary或version等写字段。服务器从当前会话取得身份，不改变原负责人；不得公网部署。
 
 ## 渲染与编辑
 

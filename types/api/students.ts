@@ -20,7 +20,7 @@ export interface StudentQuery {
 export interface StudentListItem {
   id: string;
   name: string;
-  grade: StudentGrade;
+  grade: StudentGrade | null;
   className: string | null;
   school: string | null;
   status: StudentStatus;
@@ -42,11 +42,11 @@ export interface StudentDetail extends StudentListItem {
 export interface StudentOption {
   id: string;
   name: string;
-  grade: StudentGrade;
+  grade: StudentGrade | null;
 }
 export interface StudentProfileFields {
   name: string;
-  grade: StudentGrade;
+  grade: StudentGrade | null;
   school: string | null;
   className: string | null;
   gender: "男" | "女" | null;
@@ -55,8 +55,8 @@ export interface StudentProfileFields {
   guardianPhone: string | null;
   note: string | null;
 }
-export type StudentCreate = Pick<StudentProfileFields, "name" | "grade"> &
-  Partial<Omit<StudentProfileFields, "name" | "grade">> & {
+export type StudentCreate = Pick<StudentProfileFields, "name"> &
+  Partial<Omit<StudentProfileFields, "name">> & {
     confirmPossibleDuplicate?: boolean;
   };
 /** Plaintext prefill only; DTO separation is not identity authorization. */

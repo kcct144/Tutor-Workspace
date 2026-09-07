@@ -8,7 +8,7 @@
 
 ## 结论与边界
 
-实现四种合同的列表、筛选、分页、详情、新增、编辑、科目选项及学生有效科目/最早有效到期日聚合。服务端生成UUID编号；版本号防覆盖；操作人只读服务端DEV_ACTOR_ID，缺失/无效拒绝写入。学生页面不再使用合同mock兜底；学习记录、计划、任务仍后续接入。
+实现四种合同的列表、筛选、分页、详情、新增、编辑、科目选项及学生有效科目/最早有效到期日聚合。服务端生成UUID编号；版本号防覆盖。学生页面不再使用合同mock兜底；学习记录、计划、任务仍后续接入。
 
 只在批准的tutor_workspace操作。连接白名单、每次DML/DDL前DATABASE()校验、提交前再次校验；不匹配停止。没有创建/删除数据库、切库、清库或操作其他库。没有查看/输出.env内容、修改.env或提交Git；脚本只在运行时加载环境供连接使用。未新增依赖，未实施Redis、登录、权限、自动业务流程。
 
@@ -71,7 +71,7 @@ API详情以[合同PRD](../prd/contracts.md)为准：
 
 ## 启动与复验
 
-用户自行在现有.env配置云端连接及DEV_ACTOR_ID，不发送或展示值。S1已执行时不要重置环境，也不要重新装载人员/学生。
+用户自行在现有.env配置云端连接，不发送或展示值。S1已执行时不要重置环境，也不要重新装载人员/学生。
 
 ```powershell
 pnpm db:migrate
@@ -101,7 +101,7 @@ pnpm build
 | database/seeds/contracts.mjs                                                                      | 显式且可重复安全的合同合成装载                          |
 | database/seeds/students.mjs；server/db/pool.ts                                                    | 补充每次DML/提交前目标校验                              |
 | server/db/contracts-rules.ts、contracts.ts                                                        | 输入校验、上海日期、共享状态SQL、合同查询写入和学生聚合 |
-| server/db/write.ts、dev-actor.ts；server/middleware/dev-actor.ts                                  | 写入边界保护、服务端开发操作人上下文/存在校验           |
+| server/db/write.ts                                                                                | 写入边界保护                                            |
 | server/utils/contract-body.ts                                                                     | 有界JSON读取和安全输入错误                              |
 | server/api/contracts/list.get.ts、detail.get.ts、subjects.get.ts、create.post.ts、update.patch.ts | 五个合同API，统一响应与事务                             |
 | server/db/students.ts                                                                             | 学生列表/详情批量聚合真实合同                           |

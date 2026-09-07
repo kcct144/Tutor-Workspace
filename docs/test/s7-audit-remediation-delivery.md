@@ -39,7 +39,6 @@
 - `tests/unit/student-profile-remediation.test.ts`（新增）：查询顺序、Unicode一致性、状态反馈、隔离恢复异常测试。
 - `tests/integration/student-profile-recovery.mjs`（新增）：脱敏断言、15秒数据库调用上限、已知写入恢复、统一 finally 核对。
 - `tests/integration/student-profiles.mjs`：16人硬前置、4人登记、仅13可写、3项首次SKIP、公共错误码、恢复/全数据核对。
-- `tests/integration/student-profile-actor.mjs`：无条件 finally 核对；探测 create 使用固定重复条件且不确认，update/status使用13基线字段；临时服务关闭限时5秒。
 - `docs/prd/student-management.md`、`docs/prd/student-detail.md`、`docs/design/student-data-model.md`、`docs/design/student-profile-maintenance-plan.md`：总指挥 D01/D08 映射。
 - `docs/test/s7-student-profile-delivery.md`：追加裁决和历史计数不可核实说明。
 - `docs/design/s7-audit-remediation-plan.md`、本报告（新增）：修复计划、进度和交付证据。
@@ -76,7 +75,6 @@
 | `pnpm test`                                           | PASS，20文件97项，含异常隔离模拟（不连接DB）                                                            |
 | `pnpm build`                                          | PASS，最终 Nuxt/Nitro 构建退出0；既有 PLUGIN_TIMINGS、DEP0155 非阻断警告                                |
 | `node tests/integration/student-profiles.mjs`         | 两轮安全复跑均 PASS7 / SKIP3 / fixedStudents4；第二轮包括公共错误码断言；每轮恢复后全数据核对才打印汇总 |
-| `node tests/integration/student-profile-actor.mjs`    | 两轮均PASS，空/无效操作人×create/update/status，共6项503；全部学生及关联指纹未变；临时服务关闭          |
 | `node tests/integration/student-profile-boundary.mjs` | API前及浏览器恢复后相同原12人与关联/旧台账指纹                                                          |
 
 既有 API 错误边界只读 HTTP 实测：

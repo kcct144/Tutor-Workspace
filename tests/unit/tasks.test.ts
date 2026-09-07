@@ -9,7 +9,6 @@ import {
 } from "../../server/db/task-rules";
 import { listTasks, taskSubjects, projectTask } from "../../server/db/tasks";
 import { parseMigration } from "../../server/db/safety";
-import { requireDevActor } from "../../server/db/dev-actor";
 const input = { title: "名称", subject: "科目", description: "说明" };
 describe("S5 task rules", () => {
   it("required Unicode fields and boundaries", () => {
@@ -127,14 +126,5 @@ describe("S5 task rules", () => {
     } as Parameters<typeof projectTask>[0]);
     expect(projected.assignmentCount).toBe(0);
     expect(projected).not.toHaveProperty("owner_user_id");
-  });
-  it("missing/invalid actor cannot proceed", async () => {
-    const db = {
-      execute: vi.fn().mockResolvedValue([[]]),
-    } as unknown as Connection;
-    for (const actor of [undefined, "", "0", "invalid", "18446744073709551615"])
-      await expect(requireDevActor(db, actor)).rejects.toMatchObject({
-        statusCode: 503,
-      });
   });
 });

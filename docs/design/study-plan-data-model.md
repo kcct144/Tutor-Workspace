@@ -22,7 +22,7 @@ study_plan_students：plan_id、student_id非空，组合PK(plan_id,student_id)�
 
 学生关联按当前页学生ID单次JOIN两表、JSON聚合{id,title}，GROUP BY student_id，LIMIT当前页学生数。此LIMIT限制聚合行而非截断某学生的关联，不能默默丢标签；组合PK负责去重，排序用真实plan.id，不按名称合并。详情同工具传单个ID，无N+1；可供后续首页复用。
 
-编辑仅SET content、updated_at、version=version+1，WHERE id+expectedVersion，版本上限保护，冲突409；负责人、标题、摘要、创建时间与关系不可经API变更。服务器DEV_ACTOR_ID存在校验只确认受控开发操作人，不作为登录或权限方案、不追加审计字段。
+编辑仅SET content、updated_at、version=version+1，WHERE id+expectedVersion，版本上限保护，冲突409；负责人、标题、摘要、创建时间与关系不可经API变更。服务器从当前会话取得操作人。
 
 ## 安全与装载
 

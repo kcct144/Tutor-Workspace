@@ -32,7 +32,6 @@
 | server/api/task-assignments/create-batch.post.ts                                                                  | 操作人校验、整批事务、201响应                                           |
 | server/api/task-assignments/completion.patch.ts                                                                   | 操作人校验、目标完成状态事务                                            |
 | server/api/home/list.get.ts                                                                                       | 同一读取事务中的首页分页聚合                                            |
-| server/middleware/dev-actor.ts                                                                                    | 分配写请求接入现有服务端操作人边界                                      |
 | types/api/task-assignments.ts、types/api/home.ts、types/api/tasks.ts                                              | 十进制字符串ID、跨端DTO、数字人数                                       |
 | app/services/task-assignments.ts                                                                                  | HTTP集中入口，复用任务/学生远程选项                                     |
 | app/composables/useAssignments.ts                                                                                 | 列表状态、筛选、分页、旧响应取消                                        |
@@ -49,7 +48,6 @@
 | tests/unit/assignments.test.ts、tests/unit/assignment-state.test.ts                                               | S6规则、数据库编排、异步UI状态测试                                      |
 | tests/unit/task-state.test.ts                                                                                     | 适配新增失效通知边界的mock，不修改原有业务断言                          |
 | tests/integration/task-assignments.mjs                                                                            | 真实API、约束/回滚、并发、聚合、固定样例和保护指纹                      |
-| tests/integration/assignment-actor-api.mjs                                                                        | 自建临时本机构建进程验证空/无效操作人拒绝，结束关闭                     |
 | package.json                                                                                                      | 显式db:seed:assignments、test:s6:api命令                                |
 | README.md、database/README.md                                                                                     | 执行步骤、边界、回退及旧阶段测试限制                                    |
 | docs/design/mvp-backend-implementation-plan.md、docs/design/task-data-model.md、docs/design/student-data-model.md | 同步S6状态和聚合模型                                                    |
@@ -62,7 +60,7 @@
 
 ## 运行、迁移与种子
 
-沿用既有Node/pnpm与锁文件依赖。凭据只由用户在本机.env配置；本次不查看、展示或修改文件内容。DEV_ACTOR_ID继续使用用户已配置的有效合成人员ID；浏览器不能指定或伪造操作人。
+沿用既有Node/pnpm与锁文件依赖。凭据只由用户在本机.env配置；本次不查看、展示或修改文件内容。浏览器不能指定或伪造操作人。
 
 ```powershell
 pnpm db:migrate
@@ -76,7 +74,6 @@ pnpm lint
 pnpm format:check
 pnpm test
 pnpm build
-node tests/integration/assignment-actor-api.mjs
 ```
 
 没有自动迁移/种子钩子。既有开发服务已在本机3001，本次复用，不停止用户服务。006实际执行成功；再次执行全部版本安全跳过。种子首次新增9条，再次新增0条。遇未知或超量数据即停止，不覆盖、不删除。受控脚本应独占执行，避免同时人工编辑固定验收分配。
@@ -106,7 +103,6 @@ node tests/integration/assignment-actor-api.mjs
 - 完成/恢复、清空完成时间、同版本同目标保持时间和版本、旧版本409；并发完成同一旧版本200/409。恢复已完成历史撞唯一约束409，记录保持原样。
 - 数据库外键（任务/学生/操作人）、状态CHECK、完成时间一致性、版本CHECK、待完成唯一约束均拒绝非法值；主动事务失败后数量无残留，完成历史不阻止唯一合法待完成行。
 - 首页准确在读数4，按年级过滤仍保持顶部4；每卡任务分组与studentId列表一致；学生01有3条待完成、5条完成，摘要各最多3条，剩余完成2。当前任务文本JOIN及COUNT(DISTINCT student_id)与数据库/定义接口一致，安全DTO无内部操作人与联系方式。
-- 构建产物真实API：临时回环子进程分别覆盖空和不存在DEV_ACTOR_ID，批量与完成共4类请求均503；伪造X-Actor-Id不能代替服务端值。所有数据未变化，子进程结束关闭。
 - 浏览器实际验证：分配弹窗真实启用选项、多学生选择器、日期选择、创建1条固定样例；保存期间整个表单/提交按钮禁用。分配页完成→学生详情完成→首页1/1；首页恢复→0/1→详情待完成。详情完成后返回分配页可读取；冲突恢复提示明确且保留已完成选中态。
 - 首页1280px截图检查：响应式卡片、5天合同到期、同名不同ID的两个计划标签、+2条完成剩余提示，均来自真实数据。年级高二筛到1卡、顶部仍4，无mock来源提示。
 

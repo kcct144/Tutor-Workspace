@@ -6,7 +6,7 @@ import {
 } from "../../database/connection.mjs";
 import { assertApprovedDatabase } from "../../server/db/safety.ts";
 import { executeWrite } from "../../server/db/write.ts";
-import { requireDevActor } from "../../server/db/dev-actor.ts";
+import { resolveSeedAdministrator } from "../../server/db/seed-actor.ts";
 import { inTransaction } from "../../server/db/pool.ts";
 import {
   contractStatusSql,
@@ -73,7 +73,7 @@ function writeFields(c) {
   };
 }
 await runDatabaseCommand(async (connection) => {
-  const actorId = await requireDevActor(connection, process.env.DEV_ACTOR_ID);
+  const actorId = await resolveSeedAdministrator(connection);
   const [actors] = await connection.execute(
     "SELECT id FROM users WHERE id = ? AND name = ? LIMIT 1",
     [actorId, "S1合成演示老师"],

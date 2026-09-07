@@ -15,10 +15,10 @@ import type {
 } from "../../types/api/students";
 
 const empty = (): Omit<StudentProfileFields, "grade"> & {
-  grade: StudentProfileFields["grade"] | undefined;
+  grade: StudentProfileFields["grade"];
 } => ({
   name: "",
-  grade: undefined,
+  grade: null,
   school: null,
   className: null,
   gender: null,
@@ -130,7 +130,7 @@ export function useStudentProfile(
       uncertain.value
     )
       return;
-    if (Object.keys(validateProfile(draft)).length || !draft.grade) return;
+    if (Object.keys(validateProfile(draft)).length) return;
     if (confirmed && !candidates.value.length) return;
     saving.value = true;
     error.value = "";

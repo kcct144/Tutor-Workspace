@@ -20,7 +20,9 @@ defineEmits<{ edit: []; status: [] }>();
     <dl class="basic-info-list">
       <div>
         <dt>年级</dt>
-        <dd>{{ student.grade }} · {{ student.className ?? "—" }}</dd>
+        <dd>
+          {{ student.grade ?? "年级待确认" }} · {{ student.className ?? "—" }}
+        </dd>
       </div>
       <div>
         <dt>学校</dt>

@@ -92,7 +92,16 @@ export function parseContractWrite(
     endDate: string | null = null;
   let attendedLessons: number | null = null,
     totalLessons: number | null = null;
-  if (contractType === "lessons") {
+  if (contractType === "trial") {
+    if (
+      (input.startDate !== undefined && input.startDate !== null) ||
+      (input.endDate !== undefined && input.endDate !== null) ||
+      (input.attendedLessons !== undefined && input.attendedLessons !== null) ||
+      (input.totalLessons !== undefined && input.totalLessons !== null) ||
+      makeupLessons !== 0
+    )
+      invalid("体验合同不接受日期、课时或补课数。");
+  } else if (contractType === "lessons") {
     if (input.startDate !== null || input.endDate !== null)
       invalid("按课时合同的日期必须为空。");
     attendedLessons = uint(input.attendedLessons, "已上课时");
@@ -164,6 +173,19 @@ export function parseContractQuery(
     status: input.status as ContractStatus | undefined,
   };
 }
+export function parseTrialTermination(body: unknown) {
+  if (!body || typeof body !== "object" || Array.isArray(body))
+    invalid("合同请求须为JSON对象。");
+  const input = body as Record<string, unknown>;
+  if (
+    Object.keys(input).some((key) => !["id", "expectedVersion"].includes(key))
+  )
+    invalid("请求含不可写字段。");
+  return {
+    id: positiveId(input.id),
+    expectedVersion: uint(input.expectedVersion, "版本号", true),
+  };
+}
 /** This SQL expression is shared by filters, returned status, and student aggregates. */
 export const contractStatusSql =
-  "CASE WHEN c.contract_type = 'lessons' THEN CASE WHEN c.attended_lessons < c.total_lessons THEN '生效中' ELSE '已用完' END WHEN c.start_date > ? THEN '未开始' WHEN c.end_date < ? THEN '已到期' ELSE '生效中' END";
+  "CASE WHEN c.contract_type = 'trial' THEN CASE WHEN c.trial_status = 'active' THEN '进行中' ELSE '已终止' END WHEN c.contract_type = 'lessons' THEN CASE WHEN c.attended_lessons < c.total_lessons THEN '生效中' ELSE '已用完' END WHEN c.start_date > ? THEN '未开始' WHEN c.end_date < ? THEN '已到期' ELSE '生效中' END";

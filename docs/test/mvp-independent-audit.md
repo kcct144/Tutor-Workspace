@@ -66,8 +66,6 @@ S6 与 S5 比较，000–005 SQL 文件无差异；未发现 S1–S6 外新增�
 | `node tests/integration/learning-records.mjs`                                                                 | 退出 0，固定 2 条 API 记录复用；双连接约束 / 回滚、编辑并发、最近跟进回退通过           |
 | `node tests/integration/study-plans.mjs`                                                                      | 退出 0，3 份计划 / 4 条关系；正文边界、并发、原文保留、关联通过                         |
 | `node tests/integration/tasks.mjs`                                                                            | 退出 0，4 条固定任务；启停、编辑、并发、真实人数、约束 / 回滚通过                       |
-| `node tests/integration/assignment-actor-api.mjs`                                                             | 获准执行后退出 0；空 / 不存在操作人下 2 类写接口均 503，伪造头无效，前后数据不变        |
-| `node tests/integration/task-actor-api.mjs`                                                                   | 退出 0；空 / 不存在操作人下 3 类写接口均 503，伪造头无效，前后数据不变                  |
 | `git status --short`、`git ls-files --others --exclude-standard`、`git diff --check`、提交历史 / 迁移差异检查 | 起始干净；报告前仍无业务文件改动；无 diff 格式错误                                      |
 | `git ls-files '*env*'`、`git check-ignore .env`、私有环境文件路径历史和脱敏模式扫描                           | 无被跟踪的私有环境文件，未发现所扫描的高置信度凭据模式                                  |
 | `netstat -ano -p TCP` 的 3001 监听行过滤                                                                      | 回环监听；不构成部署鉴权能力                                                            |

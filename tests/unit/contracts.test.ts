@@ -6,7 +6,11 @@ import {
   parseContractQuery,
   shanghaiToday,
 } from "../../server/db/contracts-rules";
-import { parseMigration, parseS1Migration } from "../../server/db/safety";
+import {
+  parseExperienceStudentTrialMigration,
+  parseMigration,
+  parseS1Migration,
+} from "../../server/db/safety";
 import { contractFilter } from "../../server/db/contracts";
 
 const base = {
@@ -56,6 +60,38 @@ describe("S2 contracts", () => {
       { studentId: "0" },
     ])
       expect(() => parseContractWrite({ ...base, ...patch })).toThrow();
+  });
+  it("accepts only the minimal one-time trial fields", () => {
+    const trial = {
+      ...base,
+      contractType: "trial",
+      startDate: null,
+      endDate: null,
+      attendedLessons: null,
+      totalLessons: null,
+      makeupLessons: 0,
+    };
+    expect(parseContractWrite(trial)).toMatchObject({
+      contractType: "trial",
+      startDate: null,
+      totalLessons: null,
+      makeupLessons: 0,
+    });
+    expect(
+      parseContractWrite({
+        studentId: "1",
+        subject: "英语",
+        contractType: "trial",
+      }),
+    ).toMatchObject({ startDate: null, totalLessons: null, makeupLessons: 0 });
+    for (const patch of [
+      { startDate: "2026-09-06" },
+      { endDate: "2026-09-06" },
+      { attendedLessons: 0 },
+      { totalLessons: 1 },
+      { makeupLessons: 1 },
+    ])
+      expect(() => parseContractWrite({ ...trial, ...patch })).toThrow();
   });
   it("rejects supplied numbers, actors, dates and invalid optimistic versions", () => {
     for (const patch of [
@@ -123,5 +159,20 @@ describe("S2 contracts", () => {
     ).toThrow();
     expect(sql).toContain("UNIQUE KEY uq_contracts_no");
     expect(sql).toContain("chk_contracts_fields");
+  });
+  it("accepts only the approved nullable-grade and trial migration", () => {
+    const sql = readFileSync(
+      new URL(
+        "../../database/migrations/011_experience_students_trial_contracts.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(parseExperienceStudentTrialMigration(sql)).toHaveLength(2);
+    expect(() =>
+      parseExperienceStudentTrialMigration(
+        "ALTER TABLE students DROP COLUMN grade",
+      ),
+    ).toThrow();
   });
 });

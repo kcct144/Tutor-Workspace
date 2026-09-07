@@ -174,7 +174,6 @@ describe("S8.2 global API boundary", () => {
     expect(middleware).toContain("findActiveBrowserSession");
     expect(middleware).toContain("sessionCsrfMatches");
     expect(middleware).toContain("CSRF_INVALID");
-    expect(middleware).not.toContain("DEV_ACTOR_ID");
     const cookies = readFileSync("server/auth/cookies.ts", "utf8");
     expect(cookies).toContain('sameSite: "strict"');
     expect(cookies).toContain("httpOnly: true");
@@ -201,7 +200,6 @@ describe("S8.2 global API boundary", () => {
     for (const file of writes) {
       const source = readFileSync(`server/api/${file}`, "utf8");
       expect(source).toContain("requireActiveAuth");
-      expect(source).not.toContain("requireDevActor");
       expect(source).not.toContain("devActorId");
     }
   });

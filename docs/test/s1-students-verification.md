@@ -14,7 +14,7 @@
 
 数据库连接前校验配置白名单，连接后通过DATABASE()确认批准库 `tutor_workspace` 再进行操作。迁移成功登记000/001，仅创建schema_migrations、users、students；显式装载1名合成人员和12名合成学生。无清库、切库、数据库创建删除或其他库修改。未读取/展示真实配置值，仅脚本与应用运行时加载.env供连接使用。
 
-重复迁移已验证：校验和匹配后跳过两版；重复种子已验证：检测非空表后不写入、不覆盖。首次装载输出演示人员ID供用户手动填写DEV_ACTOR_ID，脚本不自动改变量。回退和失败DDL处理见[数据库说明](../../database/README.md)。
+重复迁移已验证：校验和匹配后跳过两版；重复种子已验证：检测非空表后不写入、不覆盖。回退和失败DDL处理见[数据库说明](../../database/README.md)。
 
 ## API契约
 
@@ -92,7 +92,7 @@ pnpm build
 | app/components/BaseDataTable.vue、BasicInfoPanel.vue、DeferredStudentSection.vue     | 受控分页、可空基本信息、复用后续区域占位                  |
 | app/layouts/default.vue                                                              | 固定老师名改成“开发测试·无登录”，不伪装真实身份           |
 | app/types/components.d.ts                                                            | 自动组件类型随实际使用更新                                |
-| .env.example、nuxt.config.ts                                                         | 空DEV_ACTOR_ID、私有MySQL TLS开关，不写真实配置           |
+| .env.example、nuxt.config.ts                                                         | 私有MySQL TLS开关，不写真实配置                           |
 | package.json、vitest.config.ts                                                       | 显式命令及前端测试路径别名，无新增依赖                    |
 | tests/unit/students.test.ts、database-pool.test.ts、student-state.test.ts            | 边界、查询、事务、投影与异步状态测试                      |
 | tests/integration/students.mjs                                                       | 显式真实API和批准库结构只读检查                           |

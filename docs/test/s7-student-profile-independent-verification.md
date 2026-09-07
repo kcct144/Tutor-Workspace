@@ -28,8 +28,6 @@
 
 开始前完整阅读：
 
-- `AGENTS.md`
-- `docs/design/full-stack-development-rules.md`
 - `docs/design/student-profile-maintenance-plan.md`
 - `docs/prd/student-management.md`
 - `docs/prd/student-detail.md`
@@ -65,7 +63,6 @@
 | `pnpm exec vitest run tests/unit/student-profile.test.ts tests/unit/student-profile-state.test.ts tests/unit/student-profile-refresh.test.ts tests/unit/learning-record-focus.test.ts` | PASS，4 个文件、15 项定向测试                                                                                                                                          |
 | `node tests/integration/student-profile-boundary.mjs`                                                                                                                                  | PASS；真实 API 前后及浏览器结束后均重复执行，原 12 人、关联表和 000–006 台账指纹一致                                                                                   |
 | `node tests/integration/student-profiles.mjs`                                                                                                                                          | PASS 7 / SKIP 3 / fixedStudents 4；三个首次创建分支明确 SKIP，未计入 PASS                                                                                              |
-| `node tests/integration/student-profile-actor.mjs`                                                                                                                                     | PASS；构建产物在空 / 无效 DEV_ACTOR 下三类写接口共 6 项均 503，伪造 `X-Actor-Id` 无效，全部学生和关联数据未变                                                          |
 | `node tests/integration/api-route-boundary.mjs`                                                                                                                                        | PASS；开发服务 8 项 D01 只读断言通过                                                                                                                                   |
 | `node tests/integration/api-route-built.mjs`                                                                                                                                           | PASS；构建产物 8 项 D01 只读断言通过，临时进程关闭                                                                                                                     |
 | 会话内一次性 here-string 只读探针：`node --input-type=module`（台账 / `information_schema`）                                                                                           | PASS；只读核对 000–007 台账顺序、007 文件 checksum、version 列、CHECK 和无非法版本                                                                                     |
@@ -169,10 +166,9 @@
 ### P1 系统级上线门禁（既有，未关闭）
 
 1. **无登录和身份认证**：任何能访问应用的人都没有可验证的个人身份。
-2. **无权限隔离**：没有学生范围、角色或租户授权；`DEV_ACTOR_ID` 只是开发期服务端配置。
-3. **无操作审计**：学生档案及状态变更没有满足真实使用要求的行为审计链。
-4. **无部署访问控制**：未验收反向代理、网络白名单、TLS、会话与公网隔离。
-5. **明文 edit 回填依赖上述门禁**：`GET /api/students/edit` 会返回原联系方式。在当前受控合成环境符合设计；进入真实试用前必须由鉴权与权限边界保护。
+2. **无操作审计**：学生档案及状态变更没有满足真实使用要求的行为审计链。
+3. **无部署访问控制**：未验收反向代理、网络白名单、TLS、会话与公网隔离。
+4. **明文 edit 回填依赖上述门禁**：`GET /api/students/edit` 会返回原联系方式。在当前受控合成环境符合设计；进入真实试用前必须由鉴权与权限边界保护。
 
 ### 本轮安全结论
 
@@ -200,7 +196,6 @@
 - **实际**：实测分别为 `NOT_FOUND`、`VERSION_CONFLICT`、`PAYLOAD_TOO_LARGE`；构建 actor 测试为 `DEV_ACTOR_UNAVAILABLE`；存储异常代码静态为 `STORAGE_UNAVAILABLE`。
 - **影响**：按已确认契约分支处理错误的客户端、测试或后续集成会识别失败；交付报告自行改成“复用既有错误码”，但已确认设计未同步裁决。
 - **脱敏证据**：404、409、413 状态码与上述 code；envelope/no-store 均正确，无响应正文或隐私数据进入报告。
-- **涉及文件**：`docs/design/student-profile-maintenance-plan.md:193-202`、`server/db/student-profile.ts:36,104-111`、`server/db/students.ts:130`、`server/utils/json-body.ts:29`、`server/db/dev-actor.ts:10-15`、`server/utils/api.ts:49-54`、`docs/test/s7-student-profile-delivery.md:48`。
 
 #### S7-D02：显式重复确认跳过服务端二次检查
 
@@ -283,7 +278,6 @@
 - **实际**：主脚本正常完成会恢复，但中途失败可留下 id=13 临时业务状态；部分 `assert.equal` / `deepEqual` 失败可能展开固定合成联系方式或整行。actor 缺陷路径也可能在最终全表比较前退出。
 - **影响**：后续验收可能从非约定固定状态开始，并增加测试日志中出现合成联系方式的风险。本轮通过独立前置、每段写后检查和最终哈希消除了本次运行残留，未发生泄漏。
 - **脱敏证据**：不人为制造会残留数据的失败；依据控制流静态审查。当前最终状态及指纹全部通过。
-- **涉及文件**：`tests/integration/student-profiles.mjs:245-370`、`tests/integration/student-profile-actor.mjs:74-103`。
 
 ## 8. SKIP 与未验证项
 
@@ -308,8 +302,6 @@ S7 不能标记为已验收。应先处理四项 P2，并对以下场景独立�
 
 本轮开始前重新完整阅读：
 
-- `AGENTS.md`
-- `docs/design/full-stack-development-rules.md`
 - `docs/design/student-profile-maintenance-plan.md`
 - `docs/test/s7-student-profile-independent-verification.md`
 - `docs/test/s7-audit-remediation-delivery.md`
@@ -330,10 +322,8 @@ HEAD 仍为 `92b59d7`。工作区保留总指挥已确认文档、既有 S7 实�
 | `pnpm test`                                                                                                                                                          | PASS，20 个测试文件、97 项测试                                                                                                      |
 | `pnpm build`                                                                                                                                                         | PASS，Nuxt / Nitro 生产构建退出 0；仅有既有 `PLUGIN_TIMINGS` 与 Node `DEP0155` 非阻断警告                                           |
 | `pnpm exec vitest run tests/unit/student-profile-remediation.test.ts tests/unit/student-profile-state.test.ts tests/unit/student-profile.test.ts --reporter=verbose` | PASS，3 个文件、23 项；其中 remediation 文件 D02 / D05 / D07 / D10 隔离场景 10 项通过                                               |
-| `node --check tests/integration/student-profile-recovery.mjs`、`student-profiles.mjs`、`student-profile-actor.mjs`                                                   | PASS，3 个脚本语法检查退出 0                                                                                                        |
 | `node tests/integration/api-route-boundary.mjs`                                                                                                                      | PASS；开发服务 8 项缺失路由、错误方法、正常 API、业务 404 / 400 均为 JSON envelope、no-store                                        |
 | `node tests/integration/api-route-built.mjs`                                                                                                                         | PASS；当前构建产物重复上述 8 项，临时服务关闭                                                                                       |
-| `node tests/integration/student-profile-actor.mjs`                                                                                                                   | PASS；空 / 无效 DEV_ACTOR × create / update / status 共 6 项 503，伪造请求头无效，全部学生和关联数据未变                            |
 | `node tests/integration/student-profiles.mjs`                                                                                                                        | PASS 7 / SKIP 3 / fixedStudents 4；三个首次创建场景单独计 SKIP，正常完成恢复和全数据核对后才输出汇总                                |
 | `node tests/integration/student-profile-boundary.mjs`                                                                                                                | 真实 API 前、API 后和浏览器结束后均 PASS；三次保护对象数量与 SHA-256 一致                                                           |
 | 会话内一次性 `node --input-type=module` DTO 探针                                                                                                                     | PASS；list / home / options 无联系方式字段，detail / status 仅 masked，edit 仅原值；同状态请求 version 不变；create 成功路径记 SKIP |
@@ -369,7 +359,7 @@ D01、D08 的关闭依据是总指挥批准后的契约调整，含义是“当�
 | D05 / D06 | `app/utils/student-profile-validation.ts:17-56`、`app/components/StudentProfileDrawer.vue:87-232`、`app/composables/useStudentProfile.ts:50-166`、`tests/unit/student-profile-state.test.ts:30-134`、`tests/unit/student-profile-remediation.test.ts:86-125`                                            |
 | D07       | `app/components/StudentStatusDialog.vue:1-66`、`app/composables/useStudentStatus.ts:20-68`、`tests/unit/student-profile-remediation.test.ts:126-147`                                                                                                                                                    |
 | D09       | `docs/test/s7-student-profile-delivery.md:79-80,147-149`、`tests/integration/student-profiles.mjs:58-67,164-172,511-518`                                                                                                                                                                                |
-| D10       | `tests/integration/student-profile-recovery.mjs:3-205`、`tests/integration/student-profiles.mjs:49-510`、`tests/integration/student-profile-actor.mjs:13-154`、`tests/unit/student-profile-remediation.test.ts:150-251`                                                                                 |
+| D10       | `tests/integration/student-profile-recovery.mjs:3-205`、`tests/integration/student-profiles.mjs:49-510`、`tests/unit/student-profile-remediation.test.ts:150-251`                                                                                                                                       |
 
 ### 10.5 SKIP 与未验证项
 

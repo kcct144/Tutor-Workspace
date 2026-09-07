@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Connection } from "mysql2/promise";
 import { executeWrite } from "../../server/db/write";
-import { requireDevActor } from "../../server/db/dev-actor";
 
 describe("S2 writes", () => {
   it("checks current database immediately before every write and prevents wrong-target DML", async () => {
@@ -28,16 +27,5 @@ describe("S2 writes", () => {
       ),
     ).rejects.toThrow();
     expect(db.execute).toHaveBeenCalledOnce();
-  });
-  it("rejects missing/malformed/nonexistent development actors without leaking values", async () => {
-    const execute = vi.fn().mockResolvedValue([[]]);
-    const db = { execute } as unknown as Connection;
-    for (const value of [undefined, "", "not-an-id", "0", "2"])
-      await expect(requireDevActor(db, value)).rejects.toMatchObject({
-        code: "DEV_ACTOR_UNAVAILABLE",
-        statusCode: 503,
-      });
-    execute.mockResolvedValue([[{ id: "1" }]]);
-    await expect(requireDevActor(db, "1")).resolves.toBe("1");
   });
 });

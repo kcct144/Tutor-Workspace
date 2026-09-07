@@ -8,7 +8,7 @@ export interface HomeQuery {
 export interface HomeStudent {
   id: string;
   name: string;
-  grade: StudentGrade;
+  grade: StudentGrade | null;
   school: string | null;
   status: "在读";
   subjects: string[];

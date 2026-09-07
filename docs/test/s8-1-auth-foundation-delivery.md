@@ -9,7 +9,7 @@
 
 本切片新增 `user_accounts`、`auth_sessions`、`audit_logs`，并为 `students` 增加仅供后续负责人范围查询使用的 `(owner_user_id,status,id)` 索引。`users` 继续是人员主表；未回填历史账号、负责人或审计，也未改变任何既有业务外键。
 
-未实现登录 API、Cookie、CSRF 中间件、页面、业务 API 鉴权或审计写入接入；现有 `DEV_ACTOR_ID` 路径保持不变，留给 S8.2 切换。
+未实现登录 API、Cookie、CSRF 中间件、页面、业务 API 鉴权或审计写入接入；相关能力留给 S8.2 切换。
 
 ## 2. 文件与用途
 
@@ -48,7 +48,7 @@ pnpm db:init-admin -- --apply --confirm
 - `users` 为空时，同一事务创建人员与唯一启用管理员。
 - `users` 非空时，只接受操作者手工输入的既有人员 ID；不显示人员列表、不猜测人员。
 - 已有启用管理员、既有人员不存在或已有登录账号时停止且不写入。
-- 密码不进入命令参数、日志、`.env`、Git 或错误对象；引导不读取或信任 `DEV_ACTOR_ID`。
+- 密码不进入命令参数、日志、`.env`、Git 或错误对象。
 
 本次只执行了无写预检，确认人员表为空且命令未创建管理员；没有执行 `--apply --confirm`。
 

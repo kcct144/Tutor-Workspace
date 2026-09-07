@@ -10,7 +10,7 @@
 
 索引：(updated_at,id)、(status,updated_at,id)、(subject,status,id)，覆盖默认/状态分页及科目筛选；owner FK索引由MySQL建立。S6独立迁移创建task_assignments，不建系列或审计表。
 
-每次写入由有效DEV_ACTOR_ID更新owner_user_id（创建/最近维护人）；更新/启停WHERE id+expectedVersion原子递增版本，0行区分404/409。复用事务、每次DML/commit前校验批准库；DTO不返回内部操作人，assignmentCount按task_id批量聚合COUNT(DISTINCT student_id)。查询参数化且LIMIT，不读取分配mock。
+每次写入由当前会话操作人更新owner_user_id（创建/最近维护人）；更新/启停WHERE id+expectedVersion原子递增版本，0行区分404/409。复用事务、每次DML/commit前校验批准库；DTO不返回内部操作人，assignmentCount按task_id批量聚合COUNT(DISTINCT student_id)。查询参数化且LIMIT，不读取分配mock。
 
 迁移按manifest/版本/校验和显式执行，旧SQL不变。MySQL DDL隐式提交，部分失败停止，不自动删表或补造台账。回退应用保留tasks/数据/台账，结构修复或清理另行审批。
 

@@ -16,6 +16,10 @@ export const createContract = (input: ContractWrite) =>
   apiWrite<Contract>("/api/contracts/create", "POST", input);
 export const updateContract = (input: ContractUpdate) =>
   apiWrite<Contract>("/api/contracts/update", "PATCH", input);
+export const terminateTrialContract = (input: {
+  id: string;
+  expectedVersion: number;
+}) => apiWrite<Contract>("/api/contracts/trial-status", "PATCH", input);
 export interface OptionQuery {
   keyword?: string;
   page: number;
@@ -36,7 +40,7 @@ export const loadStudentOptions: OptionLoader = async (query, signal) => {
   return {
     ...page,
     items: page.items.map((student) => ({
-      label: `${student.name} · ${student.grade}`,
+      label: `${student.name} · ${student.grade ?? "年级待确认"}`,
       value: student.id,
     })),
   };
@@ -45,7 +49,7 @@ loadStudentOptions.selected = async (ids, signal) => {
   const page = await getSelectedStudentOptions(ids, signal);
   return page.items.map((student) => ({
     value: student.id,
-    label: `${student.name} · ${student.grade}`,
+    label: `${student.name} · ${student.grade ?? "年级待确认"}`,
   }));
 };
 export const loadSubjectOptions: OptionLoader = async (query, signal) => {

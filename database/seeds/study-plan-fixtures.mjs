@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { requireDevActor } from "../../server/db/dev-actor.ts";
+import { resolveSeedAdministrator } from "../../server/db/seed-actor.ts";
 export const planFixtures = [
   {
     title: "S4标准演示计划",
@@ -25,7 +25,7 @@ export const unsafePlanContent =
   '  \n## 特殊字符与安全预览\n\n<script>alert("S4安全校验")</script>\n<img src="x" onerror="alert(1)">\n[链接](javascript:alert(1))\n&amp; **粗体** `代码`\n\n  ';
 export const longPlanContent = "😀".repeat(100000);
 export async function planFixtureContext(db) {
-  const actorId = await requireDevActor(db, process.env.DEV_ACTOR_ID);
+  const actorId = await resolveSeedAdministrator(db);
   const [actor] = await db.execute(
     "SELECT id FROM users WHERE id=? AND name=? LIMIT 1",
     [actorId, "S1合成演示老师"],

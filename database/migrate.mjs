@@ -8,6 +8,7 @@ import {
   parseAuthorizationAuditMigration,
   parseMigration,
   parseStudentVersionMigration,
+  parseExperienceStudentTrialMigration,
 } from "../server/db/safety.ts";
 import { checkStudentVersion } from "./student-version.mjs";
 
@@ -52,6 +53,11 @@ const manifest = [
     tables: ["audit_logs"],
     references: [],
   },
+  {
+    version: "011_experience_students_trial_contracts",
+    tables: [],
+    references: [],
+  },
 ];
 
 function parseApprovedMigration(version, sql, tables, references) {
@@ -61,6 +67,8 @@ function parseApprovedMigration(version, sql, tables, references) {
   if (version === "009_auth_sessions") return parseAuthSessionsMigration(sql);
   if (version === "010_authorization_audit")
     return parseAuthorizationAuditMigration(sql);
+  if (version === "011_experience_students_trial_contracts")
+    return parseExperienceStudentTrialMigration(sql);
   return parseMigration(sql, tables, references);
 }
 
@@ -82,6 +90,39 @@ async function checkAuthorizationAuditIndex(connection, applied) {
     columns.some((column, index) => column !== expected[index])
   )
     throw new Error("学生权限索引不符合批准定义。");
+}
+async function checkExperienceTrialStructure(connection, applied) {
+  await assertApprovedDatabase(connection);
+  const [rows] = await connection.execute(
+    "SELECT TABLE_NAME,COLUMN_NAME,IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND ((TABLE_NAME='students' AND COLUMN_NAME='grade') OR (TABLE_NAME='contracts' AND COLUMN_NAME='trial_status')) ORDER BY TABLE_NAME,COLUMN_NAME LIMIT 2",
+  );
+  const grade = rows.find(
+    (row) => row.TABLE_NAME === "students" && row.COLUMN_NAME === "grade",
+  );
+  const trial = rows.find(
+    (row) =>
+      row.TABLE_NAME === "contracts" && row.COLUMN_NAME === "trial_status",
+  );
+  const [indexRows] = await connection.execute(
+    "SELECT SEQ_IN_INDEX,COLUMN_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='contracts' AND INDEX_NAME=? ORDER BY SEQ_IN_INDEX LIMIT 4",
+    ["idx_contracts_student_trial_status"],
+  );
+  const expectedIndex = ["student_id", "contract_type", "trial_status", "id"];
+  const indexColumns = indexRows.map((row) => String(row.COLUMN_NAME));
+  if (!applied) {
+    if (!grade || grade.IS_NULLABLE !== "NO" || trial || indexColumns.length)
+      throw new Error("发现未登记的体验学生或体验合同DDL，停止人工核对。");
+    return;
+  }
+  if (
+    !grade ||
+    grade.IS_NULLABLE !== "YES" ||
+    !trial ||
+    trial.IS_NULLABLE !== "YES" ||
+    indexColumns.length !== expectedIndex.length ||
+    indexColumns.some((column, index) => column !== expectedIndex[index])
+  )
+    throw new Error("体验学生或体验合同结构不符合批准定义。");
 }
 await runDatabaseCommand(async (connection) => {
   const [versionRows] = await connection.query("SELECT VERSION() AS version");
@@ -145,6 +186,8 @@ await runDatabaseCommand(async (connection) => {
             await checkStudentVersion(connection, true);
           if (migration.version === "010_authorization_audit")
             await checkAuthorizationAuditIndex(connection, true);
+          if (migration.version === "011_experience_students_trial_contracts")
+            await checkExperienceTrialStructure(connection, true);
           console.log(migration.version + " 已应用，跳过。");
           continue;
         }
@@ -159,6 +202,8 @@ await runDatabaseCommand(async (connection) => {
         await checkStudentVersion(connection, false);
       if (migration.version === "010_authorization_audit")
         await checkAuthorizationAuditIndex(connection, false);
+      if (migration.version === "011_experience_students_trial_contracts")
+        await checkExperienceTrialStructure(connection, false);
       for (const statement of migration.statements) {
         await assertApprovedDatabase(connection);
         await connection.query(statement);
@@ -167,6 +212,8 @@ await runDatabaseCommand(async (connection) => {
         await checkStudentVersion(connection, true);
       if (migration.version === "010_authorization_audit")
         await checkAuthorizationAuditIndex(connection, true);
+      if (migration.version === "011_experience_students_trial_contracts")
+        await checkExperienceTrialStructure(connection, true);
       await assertApprovedDatabase(connection);
       await connection.execute(
         "INSERT INTO schema_migrations (version, checksum) VALUES (?, ?)",

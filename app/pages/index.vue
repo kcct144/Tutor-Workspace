@@ -87,7 +87,7 @@ const selectedGrade = computed<string>({
               >
             </h2>
             <span class="grade-label"
-              >{{ student.grade
+              >{{ student.grade ?? "年级待确认"
               }}<template v-if="student.subjects.length">
                 · {{ student.subjects.join("、") }}</template
               ></span

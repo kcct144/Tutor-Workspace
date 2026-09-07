@@ -21,6 +21,7 @@ const {
   isEditing,
   formError,
   saving,
+  terminatingId,
   conflict,
   notice,
   openCreate,
@@ -28,6 +29,7 @@ const {
   close,
   save,
   reloadDetail,
+  terminateTrial,
 } = useContracts();
 const columns: TableColumnType[] = [
   {
@@ -61,7 +63,7 @@ const columns: TableColumnType[] = [
     width: 90,
   },
   { title: "状态", key: "status", width: 100 },
-  { title: "操作", key: "action", width: 80, fixed: "right" },
+  { title: "操作", key: "action", width: 150, fixed: "right" },
 ];
 function typeLabel(type: unknown) {
   return contractLabels[type as keyof typeof contractLabels] ?? "—";
@@ -189,6 +191,25 @@ function typeLabel(type: unknown) {
             @click="openEdit(record.id)"
             >编辑</AButton
           >
+          <APopconfirm
+            v-if="
+              column.key === 'action' &&
+              record.contractType === 'trial' &&
+              record.trialStatus === 'active'
+            "
+            title="确认终止这份体验合同？终止后将不再参与学生科目聚合。"
+            ok-text="终止"
+            cancel-text="取消"
+            @confirm="terminateTrial(record.id)"
+          >
+            <AButton
+              type="link"
+              danger
+              :loading="terminatingId === record.id"
+              :disabled="Boolean(terminatingId)"
+              >终止</AButton
+            >
+          </APopconfirm>
         </template>
       </BaseDataTable>
     </section>

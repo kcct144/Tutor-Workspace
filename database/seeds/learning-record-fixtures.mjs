@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { requireDevActor } from "../../server/db/dev-actor.ts";
+import { resolveSeedAdministrator } from "../../server/db/seed-actor.ts";
 
 export const seedContents = [
   "S3标准演示：识别知识缺口。",
@@ -12,7 +12,7 @@ export const apiContents = [
 ];
 export const browserContent = "S3固定浏览器验收：学习表现。";
 export async function fixtureContext(db) {
-  const actorId = await requireDevActor(db, process.env.DEV_ACTOR_ID);
+  const actorId = await resolveSeedAdministrator(db);
   const [actor] = await db.execute(
     "SELECT id FROM users WHERE id=? AND name=? LIMIT 1",
     [actorId, "S1合成演示老师"],

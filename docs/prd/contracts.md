@@ -1,6 +1,6 @@
 # 合同模块（S2）
 
-- 状态：已实现（开发自测，待总指挥/测试验收）
+- 状态：已实现（S2）；体验合同扩展实施中
 - 负责人：开发负责人
 - 创建日期：2026-09-05
 - 最后更新日期：2026-09-06
@@ -13,12 +13,13 @@
 ## 字段与规则
 
 - 一个合同关联一个学生、一个科目；学生可有多合同。科目trim后1–64个Unicode字符，使用区分大小写/重音的数据库排序规则去重，不新建科目字典。
-- 类型为month/月卡、half_year/半年卡、year/年卡、lessons/按课时。
+- 类型为month/月卡、half_year/半年卡、year/年卡、lessons/按课时、trial/体验合同。
 - 时间类startDate/endDate必填真实YYYY-MM-DD日期、开始≤结束；attendedLessons/totalLessons必须为null。日期人工填，不自动按月计算。
+- 体验合同只要求学生和科目；日期、课时均为null，需补课数固定0；以其专属生命周期状态“进行中/已终止”控制是否参与学生科目聚合，不产生到期日。
 - 按课时两个日期必须为null；课时整数，0≤已上≤总数、总数>0。所有类型保留makeupLessons非负整数，默认0；三个课时数上限采用INT UNSIGNED的4294967295，不允许小数。
 - contractNo仅服务端crypto.randomUUID()生成，唯一、不可改。请求中出现编号（即使原值）、操作人或未知字段都拒绝。
 - version从1递增；编辑提交expectedVersion，旧版本409，保留输入，用户主动重新载入后再编辑。允许更换关联学生，保存后原/新学生聚合均重新读取。
-- created_by/updated_by只保存服务端DEV_ACTOR_ID对应人员引用，用于本次写入责任信息，不创建审计历史或账号管理系统。
+- created_by/updated_by只保存服务端当前会话人员引用，用于本次写入责任信息。
 
 ## 权威有效性与聚合
 
@@ -32,15 +33,16 @@
 
 统一{status,msg,data}；GET分页page默认1、pageSize默认8最大100，科目选项默认20；页码最大1000000000；越界为空items、total准确。
 
-| 路由                        | 输入                                                                                        | 输出                                     |
-| --------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| GET /api/contracts/list     | page/pageSize，keyword、studentId、subject、contractType、status可选                        | 分页Contract；关键词匹配编号/学生名/科目 |
-| GET /api/contracts/detail   | id                                                                                          | Contract                                 |
-| POST /api/contracts/create  | studentId,subject,contractType,startDate,endDate,attendedLessons,totalLessons,makeupLessons | 201 Contract                             |
-| PATCH /api/contracts/update | 上述字段+id,expectedVersion                                                                 | 200 Contract                             |
-| GET /api/contracts/subjects | page/pageSize、keyword可选                                                                  | 分页{value}；包括历史合同科目以支持筛选  |
+| 路由                              | 输入                                                                                        | 输出                                     |
+| --------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| GET /api/contracts/list           | page/pageSize，keyword、studentId、subject、contractType、status可选                        | 分页Contract；关键词匹配编号/学生名/科目 |
+| GET /api/contracts/detail         | id                                                                                          | Contract                                 |
+| POST /api/contracts/create        | studentId,subject,contractType,startDate,endDate,attendedLessons,totalLessons,makeupLessons | 201 Contract                             |
+| PATCH /api/contracts/update       | 上述字段+id,expectedVersion                                                                 | 200 Contract；不能在体验与其他类型间切换 |
+| PATCH /api/contracts/trial-status | id,expectedVersion                                                                          | 终止进行中的体验合同；重复终止无副作用   |
+| GET /api/contracts/subjects       | page/pageSize、keyword可选                                                                  | 分页{value}；包括历史合同科目以支持筛选  |
 
-Contract包含id/contractNo/studentId/studentName/subject/contractType/日期/课时/补课数/status/version/updatedAt，不返回人员内部字段或完整数据库行。
+Contract包含id/contractNo/studentId/studentName/subject/contractType/trialStatus/日期/课时/补课数/status/version/updatedAt，不返回人员内部字段或完整数据库行。`trialStatus` 仅体验合同非空。
 400校验、404关联学生/合同不存在、409版本/编号冲突、413超大JSON、503数据库或DEV_ACTOR配置缺失/无效；不泄露配置/SQL/驱动错误。写请求仅JSON，技术上限16KiB，失败不自动重发。
 
 002_contracts只创建contracts：BIGINT主键、student FK、人员FK、编号唯一、类型和互斥CHECK、非空/整数范围约束；version正数；(student_id,start_date,end_date,id)、(subject,contract_type,id)索引。保留创建/更新时间，UTC；无软删除。已应用S1 SQL不改。
@@ -53,7 +55,7 @@ Contract包含id/contractNo/studentId/studentName/subject/contractType/日期/�
 - 网络结果不明时不自动重试创建，提示先刷新核对编号/学生，避免重复新增；409保留草稿并提供重新载入。
 - 合同保存发送学生数据失效通知；同页挂载的学生查询刷新，跨路由进入学生列表/详情重新读取；其他标签页重新聚焦时刷新，不持久缓存聚合。
 - 学生详情新增科目展示，学生列表科目用标签，到期空值为“—”；学习计划/记录/任务仍为空且标注后续接入。
-- 开发人员仅在服务端.env填写DEV_ACTOR_ID；没有有效人员则禁止写入，不默认演示ID。S2仍不得公网部署。
+- 没有有效会话身份时禁止写入，不默认演示人员。S2仍不得公网部署。
 
 ## 种子、测试与回退
 
@@ -61,3 +63,17 @@ Contract包含id/contractNo/studentId/studentName/subject/contractType/日期/�
 单元覆盖四类型/日期/互斥/课时范围、状态与上海跨日、输入白名单/版本；真实API覆盖创建编辑、409和学生刷新一致。数据库约束/唯一性/失败回滚用批准库内事务验证，回滚测试数据，不清库；API新增的合成测试合同保留并明确标记。
 验收：同一合成学生两份有效时间合同→科目去重/最早到期→编辑使最早失效→显示另一份；课时耗尽后剔除科目；无有效合同无兜底；刷新/跨页结果一致。
 回退应用、保留合同数据；DDL不支持整组事务回滚，失败停止人工核对，不自动drop或清库。任何破坏性处理另行审批。S2交付后停止，不开始S3。
+
+## 已确认、待实施：一次性体验合同（2026-09-07）
+
+“英语体验合同”需求裁决如下：
+
+- 新增第五种 `trial` / “体验合同”。它是一次性记录：`studentId、subject、contractType=trial` 必填；`startDate、endDate、attendedLessons、totalLessons` 全部为 `null`，`makeupLessons` 固定为 `0`，不接受客户端指定课时、日期或补课数。
+- 体验合同需要参与学生有效科目聚合。为避免无日期合同被永久视作生效，体验合同拟保存生命周期状态：`active` / “进行中”时参与 `subjects` 去重聚合；`terminated` / “已终止”时立即退出聚合。两态均不产生 `expiryDate`。
+- 合同编号仍只由服务端生成且不可修改。创建、学生关联、版本保护、重复/结果不明/并发冲突停止与保存回读均复用既有合同规则。
+- 工具按两步执行：先完成学生创建并回读稳定学生 ID，再针对该 ID 预览并确认合同创建。学生创建结果不明、重复提示未确认、学生 ID 不存在或前一步未核实，均不得继续创建合同；不新增“学生+合同”隐式联写接口。
+- 金额是合同收费金额。现有合同模型没有金额字段；本次未要求记录金额，因此体验合同不得提示、猜测、写入或展示金额。未来若要记录，需另行确认币种、精度、可空性、编辑与展示规则。
+
+`active / terminated` 仅适用于 `trial`。既有月卡、半年卡、年卡、按课时合同继续按日期/课时派生 `未开始、生效中、已到期、已用完`，不增加人工终止，避免改变既有合同有效性与聚合规则。体验合同只允许从进行中终止；重复终止返回当前合同且不增加版本，不提供恢复进行中入口。
+
+确认后需要一个版本化合同迁移（类型 CHECK）、合同规则/API/UI 与数据操作脚本的同一垂直切片；不修改既有合同或学生数据、不创建种子。

@@ -10,7 +10,7 @@
 
 完成文档分页/搜索/详情/仅正文编辑及学生真实计划标签。没有新建/删除计划、标题/摘要编辑、关系管理、历史版本、协作、任务、Redis、登录、权限或审计系统。版本号只用于乐观锁，不是版本历史。
 
-仅使用总指挥批准的tutor_workspace；连接和每次DDL/DML/提交前校验DATABASE()。未查看/输出.env内容、未修改.env、未索取凭据、未安装依赖、未创建Git提交。运行时由既有加载机制读取私有配置；DEV_ACTOR_ID须有效，只验证存在，不作为登录认证。不得公网部署或导入真实人员/学生数据。
+仅使用总指挥批准的tutor_workspace；连接和每次DDL/DML/提交前校验DATABASE()。未查看/输出.env内容、未修改.env、未索取凭据、未安装依赖、未创建Git提交。运行时由既有加载机制读取私有配置；不得公网部署或导入真实人员/学生数据。
 
 ## 交付内容与文件清单
 
@@ -22,7 +22,7 @@
 | types/api/study-plans.ts                                                                        | 列表/详情/标签/更新输入共享DTO                                       |
 | server/db/study-plan-rules.ts、study-plans.ts                                                   | 参数白名单、Unicode正文校验、分页搜索、投影、乐观锁、批量关联        |
 | server/api/study-plans/list.get.ts、detail.get.ts、update.patch.ts                              | 三个统一响应API，安全错误和受控写入                                  |
-| server/middleware/dev-actor.ts、server/db/students.ts                                           | 复用服务端操作人校验；学生列表/详情批量真实计划标签                  |
+| server/db/students.ts                                                                           | 学生列表/详情批量真实计划标签                                        |
 | app/services/study-plans.ts、app/composables/useStudyPlans.ts                                   | 集中HTTP、请求取消/过期响应隔离、分页搜索、编辑草稿与冲突处理        |
 | app/utils/markdown.ts、app/components/PlanMarkdown.vue                                          | 原型Markdown规则提取为纯函数，先转义再生成固定标签；唯一受控HTML入口 |
 | app/components/PlanTags.vue、BasicInfoPanel.vue                                                 | 真实{id,title}标签，按ID跳转，不按同名合并                           |

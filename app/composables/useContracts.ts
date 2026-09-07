@@ -2,6 +2,7 @@ import { onScopeDispose, ref, watch } from "vue";
 import {
   createContract,
   updateContract,
+  terminateTrialContract,
   getContract,
   getContracts,
 } from "~/services/contracts";
@@ -27,6 +28,7 @@ export function useContracts() {
     detailLoading = ref(false),
     formError = ref(""),
     saving = ref(false),
+    terminatingId = ref<string | null>(null),
     conflict = ref(false),
     notice = ref("");
   const detailFailed = ref(false),
@@ -163,6 +165,32 @@ export function useContracts() {
       saving.value = false;
     }
   }
+  async function terminateTrial(id: string) {
+    const contract = items.value.find((item) => item.id === id);
+    if (
+      !contract ||
+      contract.contractType !== "trial" ||
+      contract.trialStatus !== "active" ||
+      terminatingId.value
+    )
+      return;
+    terminatingId.value = id;
+    error.value = "";
+    notice.value = "";
+    try {
+      await terminateTrialContract({ id, expectedVersion: contract.version });
+      notifyStudentChange();
+      notice.value = "体验合同已终止；关联学生科目已按最新状态刷新。";
+      await refresh();
+    } catch (cause) {
+      error.value =
+        cause instanceof ServiceError
+          ? cause.message
+          : "终止结果未确认，请先刷新列表核对。";
+    } finally {
+      terminatingId.value = null;
+    }
+  }
   useStudentInvalidation(refresh);
   onScopeDispose(() => {
     controller?.abort();
@@ -183,6 +211,7 @@ export function useContracts() {
     isEditing,
     formError,
     saving,
+    terminatingId,
     conflict,
     notice,
     openCreate,
@@ -190,5 +219,6 @@ export function useContracts() {
     close,
     save,
     reloadDetail,
+    terminateTrial,
   };
 }

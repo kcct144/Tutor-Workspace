@@ -1,11 +1,11 @@
 import { runDatabaseCommand } from "../connection.mjs";
 import { assertApprovedDatabase } from "../../server/db/safety.ts";
-import { requireDevActor } from "../../server/db/dev-actor.ts";
+import { resolveSeedAdministrator } from "../../server/db/seed-actor.ts";
 import { createContract } from "../../server/db/contracts.ts";
 import { shanghaiToday } from "../../server/db/contracts-rules.ts";
 
 await runDatabaseCommand(async (connection) => {
-  const actorId = await requireDevActor(connection, process.env.DEV_ACTOR_ID);
+  const actorId = await resolveSeedAdministrator(connection);
   const [actor] = await connection.execute(
     "SELECT id FROM users WHERE id = ? AND name = ? LIMIT 1",
     [actorId, "S1合成演示老师"],

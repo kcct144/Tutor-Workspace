@@ -10,7 +10,7 @@
 
 /tasks、/tasks/assignments、首页及学生详情任务区均已真实接入。分配人数按任务历史去重学生统计。不提供删除、Redis、登录、权限、审计、系列或自动派发。S6只新增分配表，不修改既有任务定义记录。
 
-title/subject/description必填，trim后Unicode码点分别1–160、1–64、1–10000，保存trim后的文本，说明纯文本展示。标题不唯一。status仅enabled/disabled，显示启用/停用；新建默认enabled，不接受创建时指定状态；编辑允许两态，停用仍可读取。id对外十进制字符串。owner_user_id为服务端创建/最近维护操作人，每次写入从DEV_ACTOR_ID验证存在后取得，不接受浏览器owner/actor。version用于乐观锁，不是历史版本。
+title/subject/description必填，trim后Unicode码点分别1–160、1–64、1–10000，保存trim后的文本，说明纯文本展示。标题不唯一。status仅enabled/disabled，显示启用/停用；新建默认enabled，不接受创建时指定状态；编辑允许两态，停用仍可读取。id对外十进制字符串。owner_user_id为服务端创建/最近维护操作人，写入身份由当前网页登录会话取得，不接受浏览器owner/actor。version用于乐观锁，不是历史版本。
 
 ## API
 
@@ -46,7 +46,7 @@ S6将分配页、学生详情任务区、首页任务摘要接入同一task_assi
 
 GET /api/task-assignments/list支持page/pageSize/keyword/studentId/taskId/subject/status/dueState；默认8最大100，学生详情5。keyword最多64，搜索当前任务标题和学生姓名；status pending/completed，dueState overdue/today/upcoming只匹配待完成并按服务端Asia/Shanghai当天派生。列表待完成优先、due_date/id升序；已完成completed_at/id降序。学生/任务不存在404，越界空页，未知/非法参数400。
 
-POST create-batch仅taskId/studentIds/dueDate：1–100个不同学生ID，截止日>=服务端今天，任务必须启用。服务端操作人取DEV_ACTOR_ID；单事务锁任务、确认学生与无待完成冲突、批量插入。任一失败整批回滚；重复/并发唯一冲突409、不重试。返回assignmentIds/createdCount，201。
+POST create-batch仅taskId/studentIds/dueDate：1–100个不同学生ID，截止日>=服务端今天，任务必须启用。服务端操作人取当前会话；单事务锁任务、确认学生与无待完成冲突、批量插入。任一失败整批回滚；重复/并发唯一冲突409、不重试。返回assignmentIds/createdCount，201。
 
 PATCH completion仅id/completed:boolean/expectedVersion：同版本同目标返回原记录不改时间/版本；版本不符409。完成写服务端时间，恢复清空；恢复撞待完成唯一键409保持原完成状态。操作人只校验，不改原assigned_by。无删除、跳过、进行中、取消、提醒、审计或自动派发。
 

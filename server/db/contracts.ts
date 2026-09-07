@@ -5,6 +5,7 @@ import type {
   ContractQuery,
   ContractWrite,
   ContractUpdate,
+  TrialContractStatus,
 } from "../../types/api/contracts.ts";
 import type { Page } from "../../types/api/students.ts";
 import { contractStatusSql, shanghaiToday } from "./contracts-rules.ts";
@@ -18,6 +19,7 @@ interface ContractRow extends RowDataPacket {
   student_name: string;
   subject: string;
   contract_type: Contract["contractType"];
+  trial_status: TrialContractStatus | null;
   start_date: string | null;
   end_date: string | null;
   attended_lessons: number | null;
@@ -35,6 +37,7 @@ function project(row: ContractRow): Contract {
     studentName: row.student_name,
     subject: row.subject,
     contractType: row.contract_type,
+    trialStatus: row.trial_status,
     startDate: row.start_date,
     endDate: row.end_date,
     attendedLessons: row.attended_lessons,
@@ -46,7 +49,7 @@ function project(row: ContractRow): Contract {
   };
 }
 const columns =
-  "c.id, c.contract_no, c.student_id, s.name AS student_name, c.subject, c.contract_type, c.start_date, c.end_date, c.attended_lessons, c.total_lessons, c.makeup_lessons, c.version, c.updated_at, (" +
+  "c.id, c.contract_no, c.student_id, s.name AS student_name, c.subject, c.contract_type, c.trial_status, c.start_date, c.end_date, c.attended_lessons, c.total_lessons, c.makeup_lessons, c.version, c.updated_at, (" +
   contractStatusSql +
   ") AS status";
 export function likeValue(value: string) {
@@ -177,8 +180,21 @@ export async function createContract(
     try {
       const result = await executeWrite(
         connection,
-        "INSERT INTO contracts (contract_no, student_id, subject, contract_type, start_date, end_date, attended_lessons, total_lessons, makeup_lessons, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [randomUUID(), ...fields(input), actorId, actorId],
+        "INSERT INTO contracts (contract_no, student_id, subject, contract_type, trial_status, start_date, end_date, attended_lessons, total_lessons, makeup_lessons, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+          randomUUID(),
+          input.studentId,
+          input.subject,
+          input.contractType,
+          input.contractType === "trial" ? "active" : null,
+          input.startDate,
+          input.endDate,
+          input.attendedLessons,
+          input.totalLessons,
+          input.makeupLessons,
+          actorId,
+          actorId,
+        ],
       );
       return await findContract(connection, String(result.insertId));
     } catch (error) {
@@ -203,6 +219,9 @@ export async function updateContract(
   actorId: string,
 ): Promise<Contract> {
   await requireStudent(connection, input.studentId);
+  const current = await findContract(connection, input.id);
+  if ((current.contractType === "trial") !== (input.contractType === "trial"))
+    throw new ApiError(400, "VALIDATION_ERROR", "体验合同不能切换为其他类型。");
   const result = await executeWrite(
     connection,
     "UPDATE contracts SET student_id = ?, subject = ?, contract_type = ?, start_date = ?, end_date = ?, attended_lessons = ?, total_lessons = ?, makeup_lessons = ?, updated_by = ?, updated_at = UTC_TIMESTAMP(3), version = version + 1 WHERE id = ? AND version = ? AND version < 4294967295",
@@ -218,6 +237,27 @@ export async function updateContract(
   }
   return findContract(connection, input.id);
 }
+export async function terminateTrialContract(
+  connection: Connection,
+  id: string,
+  expectedVersion: number,
+  actorId: string,
+): Promise<Contract> {
+  const current = await findContract(connection, id);
+  if (current.contractType !== "trial")
+    throw new ApiError(400, "VALIDATION_ERROR", "仅体验合同可以终止。");
+  if (current.version !== expectedVersion)
+    throw new ApiError(409, "VERSION_CONFLICT", "合同已被修改，请重新载入。");
+  if (current.trialStatus === "terminated") return current;
+  const result = await executeWrite(
+    connection,
+    "UPDATE contracts SET trial_status='terminated',updated_by=?,updated_at=UTC_TIMESTAMP(3),version=version+1 WHERE id=? AND version=? AND trial_status='active' AND version < 4294967295",
+    [actorId, id, expectedVersion],
+  );
+  if (!result.affectedRows)
+    throw new ApiError(409, "VERSION_CONFLICT", "合同已被修改，请重新载入。");
+  return findContract(connection, id);
+}
 export async function studentContractAggregates(
   connection: Connection,
   ids: string[],
@@ -232,10 +272,12 @@ export async function studentContractAggregates(
   const [rows] = await connection.execute<RowDataPacket[]>(
     "SELECT a.student_id, JSON_ARRAYAGG(a.subject) AS subjects, MIN(a.expiry_date) AS expiry_date FROM (SELECT c.student_id, c.subject, MIN(CASE WHEN c.contract_type <> 'lessons' THEN c.end_date END) AS expiry_date FROM contracts c WHERE c.student_id IN (" +
       slots +
-      ") AND (" +
+      ") AND ((" +
       contractStatusSql +
-      ") = '生效中' GROUP BY c.student_id, c.subject) a GROUP BY a.student_id LIMIT ?",
-    [...ids, today, today, ids.length],
+      ") = '生效中' OR (" +
+      contractStatusSql +
+      ") = '进行中') GROUP BY c.student_id, c.subject) a GROUP BY a.student_id LIMIT ?",
+    [...ids, today, today, today, today, ids.length],
   );
   for (const row of rows) {
     const subjects: string[] =

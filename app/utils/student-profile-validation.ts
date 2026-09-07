@@ -4,7 +4,7 @@ import {
 } from "../../types/api/students";
 
 export type ProfileDraft = Omit<StudentProfileFields, "grade"> & {
-  grade: StudentProfileFields["grade"] | undefined;
+  grade: StudentProfileFields["grade"];
 };
 export function profileToday() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -29,7 +29,10 @@ export function validateProfile(draft: ProfileDraft, today = profileToday()) {
       errors[field] = `${label}不能超过${max}个字符。`;
   }
   if (!draft.name.trim()) errors.name = "请输入学生姓名。";
-  if (!studentGrades.some((grade) => grade === draft.grade))
+  if (
+    draft.grade !== null &&
+    !studentGrades.some((grade) => grade === draft.grade)
+  )
     errors.grade = "请选择有效年级。";
   if (draft.gender !== null && draft.gender !== "男" && draft.gender !== "女")
     errors.gender = "请选择有效性别。";

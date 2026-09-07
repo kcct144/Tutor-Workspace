@@ -58,7 +58,13 @@ watch(
 );
 function typeChanged(value: unknown) {
   if (!contractTypes.includes(value as ContractType)) return;
-  if (value === "lessons") {
+  if (value === "trial") {
+    form.value.startDate = null;
+    form.value.endDate = null;
+    form.value.attendedLessons = null;
+    form.value.totalLessons = null;
+    form.value.makeupLessons = 0;
+  } else if (value === "lessons") {
     form.value.startDate = null;
     form.value.endDate = null;
     form.value.attendedLessons = 0;
@@ -116,14 +122,26 @@ function typeChanged(value: unknown) {
           v-model:value="form.contractType"
           :disabled="saving"
           :options="
-            contractTypes.map((value) => ({
-              value,
-              label: contractLabels[value],
-            }))
+            contractTypes
+              .filter(
+                (value) =>
+                  !isEditing ||
+                  (contract?.contractType === 'trial') === (value === 'trial'),
+              )
+              .map((value) => ({
+                value,
+                label: contractLabels[value],
+              }))
           "
           @change="typeChanged"
       /></label>
-      <template v-if="form.contractType !== 'lessons'">
+      <AAlert
+        v-if="form.contractType === 'trial'"
+        message="体验合同一次性生效，不填写日期、课时或补课数；终止后不再参与学生科目聚合。"
+        type="info"
+        show-icon
+      />
+      <template v-else-if="form.contractType !== 'lessons'">
         <label
           >开始日期<ADatePicker
             :value="form.startDate ?? undefined"
@@ -176,7 +194,7 @@ function typeChanged(value: unknown) {
             "
         /></label>
       </template>
-      <label
+      <label v-if="form.contractType !== 'trial'"
         >需补课数<AInputNumber
           v-model:value="form.makeupLessons"
           :min="0"

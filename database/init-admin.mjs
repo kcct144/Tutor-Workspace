@@ -139,9 +139,7 @@ async function collectBootstrapInput(userCount) {
 
 function printHelp() {
   console.log("用法：pnpm db:init-admin -- --apply --confirm");
-  console.log(
-    "仅本机交互式终端可运行；不会读取 DEV_ACTOR_ID 或 .env 之外的凭据。",
-  );
+  console.log("仅本机交互式终端可运行；不会从环境变量读取账号或密码。");
   console.log("默认只做批准库与启用管理员预检；写入时仅通过隐藏输入读取密码。");
 }
 

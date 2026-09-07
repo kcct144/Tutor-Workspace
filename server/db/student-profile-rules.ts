@@ -57,7 +57,8 @@ function profile(
   today: string,
 ): StudentProfileFields {
   const name = text(input.name, 64, "学生姓名", true)!;
-  if (!studentGrades.some((v) => v === input.grade))
+  const grade = input.grade ?? null;
+  if (grade !== null && !studentGrades.some((v) => v === grade))
     invalid("请选择有效年级。");
   const gender = input.gender ?? null;
   if (gender !== null && gender !== "男" && gender !== "女")
@@ -79,7 +80,7 @@ function profile(
     invalid("联系方式格式不正确。");
   return {
     name,
-    grade: input.grade as StudentProfileFields["grade"],
+    grade: grade as StudentProfileFields["grade"],
     gender,
     enrolledAt,
     guardianPhone,

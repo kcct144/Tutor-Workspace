@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { Modal } from "ant-design-vue";
 import { onBeforeRouteLeave, onBeforeRouteUpdate } from "vue-router";
-import { studentGrades, type StudentDetail } from "../../types/api/students";
+import {
+  studentGrades,
+  type StudentDetail,
+  type StudentGrade,
+} from "../../types/api/students";
 const emit = defineEmits<{
   saved: [student: StudentDetail, created: boolean];
 }>();
@@ -93,13 +97,19 @@ defineExpose({ begin });
       /></AFormItem>
       <AFormItem
         label="年级"
-        required
         :help="fieldErrors.grade"
         :validate-status="fieldErrors.grade ? 'error' : undefined"
         ><ASelect
-          v-model:value="draft.grade"
+          :value="draft.grade ?? undefined"
           aria-label="学生年级"
+          allow-clear
           :options="studentGrades.map((value) => ({ value, label: value }))"
+          @update:value="
+            (value) =>
+              (draft.grade = studentGrades.includes(value as StudentGrade)
+                ? (value as StudentGrade)
+                : null)
+          "
       /></AFormItem>
       <AFormItem
         label="学校"

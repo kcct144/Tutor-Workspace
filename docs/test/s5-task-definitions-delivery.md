@@ -21,7 +21,6 @@
 | database/seeds/tasks.mjs、task-fixtures.mjs                                                                                    | 2条固定种子、合成身份/固定验收集合核对、执行锁和只读S1–S4指纹     |
 | server/db/task-rules.ts、tasks.ts                                                                                              | 输入白名单、Unicode长度、分页筛选、显式投影、固定人数、乐观锁读写 |
 | server/api/tasks/list.get.ts、detail.get.ts、create.post.ts、update.patch.ts、status.patch.ts、options.get.ts、subjects.get.ts | 七个任务定义接口，统一响应和安全错误                              |
-| server/middleware/dev-actor.ts                                                                                                 | 任务写操作接入已有服务端操作人上下文                              |
 | types/api/tasks.ts                                                                                                             | 请求/响应/状态与选项DTO，十进制字符串ID                           |
 | app/services/tasks.ts、app/composables/useTasks.ts                                                                             | 集中HTTP、请求取消、独立选项、草稿/冲突/提交状态                  |
 | app/pages/tasks/index.vue                                                                                                      | 原有结构真实接入，异步反馈、服务端分页、详情回填和启停            |
@@ -29,7 +28,6 @@
 | app/types/components.d.ts                                                                                                      | 自动导入声明同步                                                  |
 | tests/unit/tasks.test.ts、task-state.test.ts                                                                                   | 规则、投影、迁移范围、操作人、并发UI状态回归                      |
 | tests/integration/tasks.mjs                                                                                                    | 显式真实API/数据库约束/事务/固定数据与S1–S4一致性验证             |
-| tests/integration/task-actor-api.mjs                                                                                           | 构建产物独立本机进程验证空/不存在操作人拒写                       |
 | package.json                                                                                                                   | 新增db:seed:tasks、test:s5:api；依赖不变                          |
 | README.md、database/README.md                                                                                                  | 命令、权限、数据边界、回退说明                                    |
 | docs/prd/tasks.md、docs/design/task-data-model.md、docs/design/mvp-backend-implementation-plan.md                              | 已确认契约及S5实现状态、S6停止点                                  |
@@ -49,29 +47,27 @@ pnpm lint
 pnpm format:check
 pnpm test
 pnpm build
-node tests/integration/task-actor-api.mjs
 ```
 
-每个迁移/种子/真实测试开始时校验DATABASE()；每次DML/DDL/事务提交前继续校验，仅允许tutor_workspace。凭据只经既有运行时加载，未查看/输出.env内容、未修改.env、未安装依赖、未提交Git。DEV_ACTOR_ID仅由用户本机配置，服务器校验存在，写入创建/最近维护人；浏览器owner/actor字段拒绝，不信任伪造请求头。没有登录/权限，禁止公网部署和真实人员数据。
+每个迁移/种子/真实测试开始时校验DATABASE()；每次DML/DDL/事务提交前继续校验，仅允许tutor_workspace。凭据只经既有运行时加载，未查看/输出.env内容、未修改.env、未安装依赖、未提交Git。浏览器owner/actor字段拒绝，不信任伪造请求头。不得公网部署和真实人员数据。
 
 复用既有mysql2和Nuxt；Nuxt4.5.2、Vue3.5.42、Ant Design Vue4.2.6、mysql2 3.24.3、TypeScript6.0.3、Vitest4.1.11未变。安装、启动、构建不自动迁移或种子。
 
 ## 实际验证证据
 
-| 验证           | 结果                                                                                                                              |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| 005迁移        | 显式成功，仅tasks；再次运行全部跳过，旧版本校验和一致                                                                             |
-| 固定种子       | 首次2条，再次0条，不覆盖                                                                                                          |
-| 规则/API       | 必填、空白、长度上下界（含emoji）、未知字段、ID/状态/版本/分页非法、413、404均覆盖                                                |
-| 状态/乐观锁    | 启停双向、停用详情读取、旧版本409、同版本并发仅一200另一409                                                                       |
-| 查询           | 标题/科目/说明搜索、组合筛选、SQL注入式关键词、越界空页、pageSize=1跨页、subjects独立去重分页、options仅启用                      |
-| 数据库         | FK、空字段、超长说明、非法状态、version CHECK；独立观察连接确认未提交插入不可见，失败事务回滚无持久新增                           |
-| 操作人真实API  | 构建产物在独立loopback进程用空/不存在DEV_ACTOR_ID，create/update/status均503且DEV_ACTOR_UNAVAILABLE；伪造header无效；进程结束关闭 |
-| 敏感投影       | DTO键白名单，无内部人员字段；列表assignmentCount恒0，options仅id/title/subject                                                    |
-| 真实API重复    | 两次完整通过，首次3条固定任务，浏览器新增后4条，重复复用无累积                                                                    |
-| 单元测试       | 12文件54项通过，S5新增11项，覆盖草稿、详情竞态、提交禁用、失败/409与列表刷新                                                      |
-| 类型/Lint/格式 | 最终检查见本报告后续复验记录                                                                                                      |
-| 构建           | 成功生成.output；工具链PLUGIN_TIMINGS、DEP0155提示不阻断                                                                          |
+| 验证           | 结果                                                                                                         |
+| -------------- | ------------------------------------------------------------------------------------------------------------ |
+| 005迁移        | 显式成功，仅tasks；再次运行全部跳过，旧版本校验和一致                                                        |
+| 固定种子       | 首次2条，再次0条，不覆盖                                                                                     |
+| 规则/API       | 必填、空白、长度上下界（含emoji）、未知字段、ID/状态/版本/分页非法、413、404均覆盖                           |
+| 状态/乐观锁    | 启停双向、停用详情读取、旧版本409、同版本并发仅一200另一409                                                  |
+| 查询           | 标题/科目/说明搜索、组合筛选、SQL注入式关键词、越界空页、pageSize=1跨页、subjects独立去重分页、options仅启用 |
+| 数据库         | FK、空字段、超长说明、非法状态、version CHECK；独立观察连接确认未提交插入不可见，失败事务回滚无持久新增      |
+| 敏感投影       | DTO键白名单，无内部人员字段；列表assignmentCount恒0，options仅id/title/subject                               |
+| 真实API重复    | 两次完整通过，首次3条固定任务，浏览器新增后4条，重复复用无累积                                               |
+| 单元测试       | 12文件54项通过，S5新增11项，覆盖草稿、详情竞态、提交禁用、失败/409与列表刷新                                 |
+| 类型/Lint/格式 | 最终检查见本报告后续复验记录                                                                                 |
+| 构建           | 成功生成.output；工具链PLUGIN_TIMINGS、DEP0155提示不阻断                                                     |
 
 真实测试曾因SHOW TABLES不支持该预处理占位用法停止，改为只读元数据检查；随后修正选项投影断言预期键排序。均为测试脚本问题，不放宽API或数据库约束；保留固定数据复用，不执行删除。类型检查修正了表格插槽到领域类型的衔接，改用稳定ID在composable查找；未使用any。Lint发现测试启动轮询的空catch，已补充明确说明。
 

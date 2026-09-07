@@ -31,6 +31,7 @@ const contract: Contract = {
   ...base,
   id: "1",
   contractNo: "read-only",
+  trialStatus: null,
   studentName: "合成学生",
   status: "生效中",
   version: 1,
