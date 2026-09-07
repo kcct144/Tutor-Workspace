@@ -1,6 +1,7 @@
 import { ApiError } from "../utils/api.ts";
 import { positiveId, uint } from "./contracts-rules.ts";
 import { parseStudentQuery } from "./student-query.ts";
+import { requiredSubject } from "./subject-rules.ts";
 import {
   taskStatuses,
   type TaskStatus,
@@ -35,7 +36,7 @@ export function parseTaskWrite(value: unknown): TaskWrite {
   const input = object(value, ["title", "subject", "description"]);
   return {
     title: text(input.title, 160, "任务名称"),
-    subject: text(input.subject, 64, "科目"),
+    subject: requiredSubject(input.subject),
     description: text(input.description, 10000, "任务说明"),
   };
 }
@@ -87,7 +88,7 @@ export function parseTaskQuery(
     keyword: page.keyword,
     ...(input.subject === undefined
       ? {}
-      : { subject: text(input.subject, 64, "科目") }),
+      : { subject: requiredSubject(input.subject) }),
     ...(input.status === undefined ? {} : { status: status(input.status) }),
   };
 }

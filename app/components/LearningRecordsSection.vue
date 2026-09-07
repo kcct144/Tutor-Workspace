@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import type { TableColumnType } from "ant-design-vue";
 import { recordCategories } from "../../types/api/learning-records";
+import type { Subject } from "../../types/api/subjects";
+import { loadSubjectOptions } from "~/services/contracts";
 const props = defineProps<{ studentId: string }>();
 const {
   items,
@@ -9,6 +12,7 @@ const {
   pageSize,
   keyword,
   category,
+  subject,
   dates,
   loading,
   error,
@@ -28,6 +32,10 @@ const {
   reloadEditing,
 } = useLearningRecords(() => props.studentId);
 const options = recordCategories.map((value) => ({ label: value, value }));
+const draftSubject = computed<Subject | undefined>({
+  get: () => draft.subject ?? undefined,
+  set: (value) => (draft.subject = value ?? null),
+});
 function editById(id: string) {
   const record = items.value.find((item) => item.id === id);
   if (record) begin(record);
@@ -35,6 +43,7 @@ function editById(id: string) {
 const columns: TableColumnType[] = [
   { title: "发生日期", dataIndex: "occurredOn", key: "occurredOn", width: 120 },
   { title: "分类", dataIndex: "category", key: "category", width: 65 },
+  { title: "科目", dataIndex: "subject", key: "subject", width: 100 },
   { title: "学习记录", dataIndex: "content", key: "content" },
   { title: "记录人", key: "author", width: 100 },
   { title: "操作", key: "action", width: 70 },
@@ -73,6 +82,14 @@ const columns: TableColumnType[] = [
         aria-label="学习记录分类筛选"
         :options="options"
       />
+      <RemoteSelect
+        v-model="subject"
+        class="detail-filter"
+        placeholder="科目：全部"
+        aria-label="学习记录科目筛选"
+        :loader="loadSubjectOptions"
+        :selected-label="subject"
+      />
       <ARangePicker
         v-model:value="dates"
         class="record-date-range"
@@ -104,6 +121,9 @@ const columns: TableColumnType[] = [
           record.content
         }}</span>
         <ATag v-else-if="column.key === 'category'">{{ record.category }}</ATag>
+        <ATag v-else-if="column.key === 'subject'" class="subject-tag">{{
+          record.subject ?? "综合/通用"
+        }}</ATag>
         <span v-else-if="column.key === 'author'">{{
           record.author.name
         }}</span>
@@ -146,6 +166,14 @@ const columns: TableColumnType[] = [
             v-model:value="draft.category"
             aria-label="记录分类"
             :options="options"
+        /></AFormItem>
+        <AFormItem label="科目"
+          ><RemoteSelect
+            v-model="draftSubject"
+            placeholder="综合/通用（可不选）"
+            aria-label="学习记录科目"
+            :loader="loadSubjectOptions"
+            :selected-label="draft.subject ?? undefined"
         /></AFormItem>
         <AFormItem label="发生日期" required
           ><ADatePicker

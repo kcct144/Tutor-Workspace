@@ -21,6 +21,7 @@ const record: LearningRecord = {
   studentId: "2",
   author: { id: "3", name: "合成人员" },
   category: "缺",
+  subject: null,
   content: "原文",
   occurredOn: "2000-01-01",
   createdAt: "2000-01-01T00:00:00Z",
@@ -40,19 +41,23 @@ describe("S3 record form state", () => {
       state = scope.run(() => useLearningRecords(() => "2"))!;
     state.begin(record);
     state.draft.content = "草稿";
+    state.draft.subject = "数学";
     await state.save();
     expect(state.open.value).toBe(true);
     expect(state.conflict.value).toBe(true);
     expect(state.draft.content).toBe("草稿");
+    expect(api.updateRecord.mock.calls[0]![0].subject).toBe("数学");
     await state.save();
     expect(api.updateRecord).toHaveBeenCalledTimes(1);
     api.reloadRecord.mockResolvedValue({
       ...record,
       content: "新版本",
+      subject: "英语",
       version: 2,
     });
     await state.reloadEditing();
     expect(state.draft.content).toBe("新版本");
+    expect(state.draft.subject).toBe("英语");
     expect(state.editing.value?.version).toBe(2);
     expect(state.conflict.value).toBe(false);
     scope.stop();
@@ -70,6 +75,7 @@ describe("S3 record form state", () => {
     state.begin();
     Object.assign(state.draft, {
       category: "补",
+      subject: "英语",
       content: "草稿",
       occurredOn: "2000-01-01",
     });
@@ -78,6 +84,7 @@ describe("S3 record form state", () => {
     state.close();
     expect(state.open.value).toBe(true);
     expect(api.createRecord).toHaveBeenCalledTimes(1);
+    expect(api.createRecord.mock.calls[0]![0].subject).toBe("英语");
     resolve(record);
     await saving;
     expect(notify).toHaveBeenCalledOnce();

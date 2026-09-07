@@ -1,7 +1,11 @@
 import { runDatabaseCommand } from "../connection.mjs";
 import { assertApprovedDatabase } from "../../server/db/safety.ts";
 import { createRecord } from "../../server/db/learning-records.ts";
-import { fixtureContext, seedContents } from "./learning-record-fixtures.mjs";
+import {
+  fixtureContext,
+  seedContents,
+  seedSubjects,
+} from "./learning-record-fixtures.mjs";
 
 await runDatabaseCommand(async (db) => {
   const { actorId, studentIds } = await fixtureContext(db);
@@ -31,6 +35,7 @@ await runDatabaseCommand(async (db) => {
             {
               studentId,
               category: ["缺", "补", "强"][index],
+              subject: seedSubjects[index],
               content: seedContents[index],
               occurredOn: ["2000-01-01", "2000-01-02", "2000-01-03"][index],
             },

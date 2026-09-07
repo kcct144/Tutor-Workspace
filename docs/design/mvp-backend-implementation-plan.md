@@ -153,34 +153,34 @@ GET使用query，POST/PATCH使用JSON body。P表示分页参数/结果；所有
 
 ### 5.2 路由清单
 
-| 切片 | 方法与路由                              | 输入                                                     | 输出data / 调用页面                               |
-| ---- | --------------------------------------- | -------------------------------------------------------- | ------------------------------------------------- |
-| S1   | GET /api/health                         | 无                                                       | {app,mysqlConfigured,redisConfigured}；只检查配置 |
-| S1   | GET /api/students/list                  | P,keyword?,grade?,status?                                | P<StudentListItem>；/students                     |
-| S1   | GET /api/students/detail                | id                                                       | StudentDetail；/students/:id                      |
-| S1   | GET /api/students/options               | P,keyword?                                               | P<StudentOption>；合同/任务分配选择器             |
-| S2   | GET /api/contracts/list                 | P,keyword?,studentId?,subject?,contractType?,status?     | P<Contract>；/contracts，搜索编号/学生名/科目     |
-| S2   | GET /api/contracts/detail               | id                                                       | Contract；编辑回填                                |
-| S2   | POST /api/contracts/create              | ContractWrite                                            | Contract（含生成编号）；新增                      |
-| S2   | PATCH /api/contracts/update             | ContractWrite+id,expectedVersion                         | Contract；编辑                                    |
-| S2   | GET /api/contracts/subjects             | P,keyword?                                               | P<{value}>；科目选项                              |
-| S3   | GET /api/learning-records/list          | P,studentId,category?,keyword?,dateFrom?,dateTo?         | P<LearningRecord>；学生详情                       |
-| S3   | POST /api/learning-records/create       | RecordWrite+studentId                                    | LearningRecord；新增                              |
-| S3   | PATCH /api/learning-records/update      | RecordWrite+id,expectedVersion                           | LearningRecord；编辑                              |
-| S4   | GET /api/study-plans/list               | P,keyword?                                               | P<PlanListItem>；左侧分页导航，搜索标题/摘要/正文 |
-| S4   | GET /api/study-plans/detail             | id                                                       | PlanDetail；文档阅读                              |
-| S4   | PATCH /api/study-plans/update           | id,content,expectedVersion                               | PlanDetail；正文保存                              |
-| S5   | GET /api/tasks/list                     | P,keyword?,subject?,status?                              | P<TaskDefinition>；/tasks                         |
-| S5   | GET /api/tasks/detail                   | id                                                       | TaskDefinition；编辑回填                          |
-| S5   | POST /api/tasks/create                  | TaskWrite                                                | TaskDefinition；新增，默认启用                    |
-| S5   | PATCH /api/tasks/update                 | TaskWrite+id,expectedVersion                             | TaskDefinition；编辑                              |
-| S5   | PATCH /api/tasks/status                 | id,status,expectedVersion                                | TaskDefinition；启用/停用                         |
-| S5   | GET /api/tasks/options                  | P,keyword?                                               | P<{id,title,subject}>；仅启用任务                 |
-| S5   | GET /api/tasks/subjects                 | P,keyword?                                               | P<{value}>；定义/分配科目筛选                     |
-| S6   | GET /api/task-assignments/list          | P,keyword?,studentId?,taskId?,subject?,status?,dueState? | P<TaskAssignment>；分配页及学生详情               |
-| S6   | POST /api/task-assignments/create-batch | taskId,studentIds:string[],dueDate                       | {assignmentIds,createdCount}；多选分配            |
-| S6   | PATCH /api/task-assignments/completion  | id,completed:boolean,expectedVersion                     | TaskAssignment；分配页/首页勾选                   |
-| S6   | GET /api/home/list                      | P,grade?                                                 | HomePage；首页卡片与在读数量                      |
+| 切片 | 方法与路由                              | 输入                                                      | 输出data / 调用页面                               |
+| ---- | --------------------------------------- | --------------------------------------------------------- | ------------------------------------------------- |
+| S1   | GET /api/health                         | 无                                                        | {app,mysqlConfigured,redisConfigured}；只检查配置 |
+| S1   | GET /api/students/list                  | P,keyword?,grade?,status?                                 | P<StudentListItem>；/students                     |
+| S1   | GET /api/students/detail                | id                                                        | StudentDetail；/students/:id                      |
+| S1   | GET /api/students/options               | P,keyword?                                                | P<StudentOption>；合同/任务分配选择器             |
+| S2   | GET /api/contracts/list                 | P,keyword?,studentId?,subject?,contractType?,status?      | P<Contract>；/contracts，搜索编号/学生名/科目     |
+| S2   | GET /api/contracts/detail               | id                                                        | Contract；编辑回填                                |
+| S2   | POST /api/contracts/create              | ContractWrite                                             | Contract（含生成编号）；新增                      |
+| S2   | PATCH /api/contracts/update             | ContractWrite+id,expectedVersion                          | Contract；编辑                                    |
+| S2   | GET /api/contracts/subjects             | P,keyword?                                                | P<{value}>；科目选项                              |
+| S3   | GET /api/learning-records/list          | P,studentId,category?,subject?,keyword?,dateFrom?,dateTo? | P<LearningRecord>；学生详情                       |
+| S3   | POST /api/learning-records/create       | RecordWrite+studentId                                     | LearningRecord；新增                              |
+| S3   | PATCH /api/learning-records/update      | RecordWrite+id,expectedVersion                            | LearningRecord；编辑                              |
+| S4   | GET /api/study-plans/list               | P,keyword?                                                | P<PlanListItem>；左侧分页导航，搜索标题/摘要/正文 |
+| S4   | GET /api/study-plans/detail             | id                                                        | PlanDetail；文档阅读                              |
+| S4   | PATCH /api/study-plans/update           | id,content,expectedVersion                                | PlanDetail；正文保存                              |
+| S5   | GET /api/tasks/list                     | P,keyword?,subject?,status?                               | P<TaskDefinition>；/tasks                         |
+| S5   | GET /api/tasks/detail                   | id                                                        | TaskDefinition；编辑回填                          |
+| S5   | POST /api/tasks/create                  | TaskWrite                                                 | TaskDefinition；新增，默认启用                    |
+| S5   | PATCH /api/tasks/update                 | TaskWrite+id,expectedVersion                              | TaskDefinition；编辑                              |
+| S5   | PATCH /api/tasks/status                 | id,status,expectedVersion                                 | TaskDefinition；启用/停用                         |
+| S5   | GET /api/tasks/options                  | P,keyword?                                                | P<{id,title,subject}>；仅启用任务                 |
+| S5   | GET /api/tasks/subjects                 | P,keyword?                                                | P<{value}>；定义/分配科目筛选                     |
+| S6   | GET /api/task-assignments/list          | P,keyword?,studentId?,taskId?,subject?,status?,dueState?  | P<TaskAssignment>；分配页及学生详情               |
+| S6   | POST /api/task-assignments/create-batch | taskId,studentIds:string[],dueDate                        | {assignmentIds,createdCount}；多选分配            |
+| S6   | PATCH /api/task-assignments/completion  | id,completed:boolean,expectedVersion                      | TaskAssignment；分配页/首页勾选                   |
+| S6   | GET /api/home/list                      | P,grade?                                                  | HomePage；首页卡片与在读数量                      |
 
 通用错误沿用第3节；特殊场景：关联学生/任务不存在404；合同字段互斥错误、学习记录未来日期、分配截止日早于今天、空/超过100人/重复学生ID数组为400；未启用任务、重复待完成、恢复冲突、旧version为409。前端保留输入并展示具体业务提示，不把数据库不可用解释为空列表。
 
@@ -198,7 +198,7 @@ students不冗余保存这些字段，按当前页学生ID批量聚合；合同�
 
 ### 6.2 学习记录与最近跟进
 
-新增/编辑均校验发生日期≤今天、分类合法、正文1–10000字。数据库保存原始作者、学生和创建时间；编辑只改分类/正文/发生日期及updated_at/version，不提供删除。
+新增/编辑均校验发生日期≤今天、分类合法、正文1–10000字。科目复用合同/任务统一的 trim 后 1–64 字符规则，允许 `null` 表示综合/通用跟进；不关联具体合同，也不修改合同、任务或计划。数据库保存原始作者、学生和创建时间；编辑只改分类/科目/正文/发生日期及updated_at/version，不提供删除。
 
 最近跟进始终读MAX(occurred_on)，不写students.last_follow_up_at。编辑最晚记录至更早日期时要重新聚合，不能只保留曾经出现的最大日期。前端保存后刷新记录表与基本信息；并发编辑version不匹配则409，保留草稿。
 
@@ -250,9 +250,9 @@ S2交付细节和自测结果见[交付报告](../test/s2-contracts-delivery.md)
 
 本次只执行003_learning_records；标准种子限合成学生09/10共6条，API验收限学生11两条，浏览器验收限学生12一条。固定记录重复复用，发现不匹配数据停止；不建立技术回执/删除工具，不累计S3接口测试-*。数据库约束与事务失败插入回滚；持久合成数据的任何清理都须另行授权。新增studentId仅指定目标学生，编辑拒绝归属与作者字段；无登录/权限隔离，不承诺按学生授权访问。
 
-- 迁移：student_learning_records，学生/作者FK与日期/分类索引，无删除字段。
-- 数据访问：分页、新增、带version编辑；学生最近跟进接入MAX(occurred_on)。
-- API：learning-records list/create/update，校验未来日期和10000字上限。
+- 迁移：student_learning_records，学生/作者FK与日期/分类索引，无删除字段；012 仅增加可空科目、CHECK 和学生科目日期索引，历史行保持空值。
+- 数据访问：分页、新增、带version编辑；学生最近跟进接入MAX(occurred_on)，科目不影响该聚合。
+- API：learning-records list/create/update，支持可空科目和科目筛选，校验未来日期、10000字上限和科目统一规则。
 - 前端：移除unshift/固定作者，新增和编辑复用弹窗，详情两表分页独立；保存后刷新基本信息。
 - 测试：今天/未来日期、空白及10000/10001字、作者伪造、编辑冲突、最新记录改早后最大日期回退。
 - 验收：新增→刷新→编辑→刷新；分类/日期/关键词筛选正确，最近跟进匹配数据库，无删除入口。

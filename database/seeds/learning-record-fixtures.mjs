@@ -6,6 +6,7 @@ export const seedContents = [
   "S3标准演示：完成针对性补充练习。",
   "S3标准演示：强化已掌握内容。",
 ];
+export const seedSubjects = ["英语", null, "数学"];
 export const apiContents = [
   "S3固定验收甲：学习表现。",
   "S3固定验收乙：补充练习。",

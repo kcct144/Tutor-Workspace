@@ -28,6 +28,7 @@ const row: LearningRecord = {
   studentId: "2",
   author: { id: "3", name: "合成人员" },
   category: "缺",
+  subject: "英语",
   content: "原文",
   occurredOn: "2000-01-01",
   createdAt: "2000-01-01T00:00:00Z",
@@ -75,6 +76,7 @@ describe("D03 real invalidation subscriptions", () => {
           {
             ...row,
             version: 2,
+            subject: "数学",
             content: "窗口B新文",
             occurredOn: "2000-01-03",
           },
@@ -102,6 +104,7 @@ describe("D03 real invalidation subscriptions", () => {
         page: 2,
         keyword: "文",
         category: "缺",
+        subject: undefined,
         dateFrom: "2000-01-01",
         dateTo: "2000-01-05",
       });

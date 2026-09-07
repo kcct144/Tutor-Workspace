@@ -10,9 +10,13 @@ import {
   projectRecord,
   updateRecord,
 } from "../../server/db/learning-records";
-import { parseMigration } from "../../server/db/safety";
+import {
+  parseLearningRecordSubjectMigration,
+  parseMigration,
+} from "../../server/db/safety";
 const fields = {
   category: "缺",
+  subject: null,
   content: "学习表现",
   occurredOn: "2026-09-06",
 };
@@ -28,6 +32,13 @@ describe("S3 learning records", () => {
       ).toBe(category);
     expect(
       parseRecordWrite(
+        { ...fields, studentId: "1", subject: " 英语 " },
+        false,
+        "2026-09-06",
+      ).subject,
+    ).toBe("英语");
+    expect(
+      parseRecordWrite(
         {
           ...fields,
           studentId: "1",
@@ -39,6 +50,9 @@ describe("S3 learning records", () => {
     ).toBe("😀".repeat(10000));
     for (const patch of [
       { category: "其他" },
+      { subject: "  " },
+      { subject: "学".repeat(65) },
+      { subject: 1 },
       { content: " \n\t" },
       { content: "字".repeat(10001) },
       { content: 1 },
@@ -94,12 +108,16 @@ describe("S3 learning records", () => {
       page: 1,
       pageSize: 5,
     });
+    expect(
+      parseRecordQuery({ studentId: "1", subject: " 英语 " }).subject,
+    ).toBe("英语");
     for (const query of [
       {},
       { studentId: ["1"] },
       { studentId: "1", page: "0" },
       { studentId: "1", pageSize: "101" },
       { studentId: "1", category: "无" },
+      { studentId: "1", subject: " " },
       { studentId: "1", keyword: ["a"] },
       { studentId: "1", authorId: "1" },
       { studentId: "1", dateFrom: "2026-09-07", dateTo: "2026-09-06" },
@@ -108,6 +126,7 @@ describe("S3 learning records", () => {
     const filter = recordFilter({
       studentId: "1",
       category: "补",
+      subject: "英语",
       dateFrom: "2000-01-01",
       dateTo: "2000-01-02",
       keyword: "%'_!",
@@ -115,6 +134,7 @@ describe("S3 learning records", () => {
     expect(filter.values).toEqual([
       "1",
       "补",
+      "英语",
       "2000-01-01",
       "2000-01-02",
       "%!%'!_!!%",
@@ -146,6 +166,22 @@ describe("S3 learning records", () => {
     ).toThrow();
     expect(sql).not.toMatch(/deleted_at|history|CURRENT_DATE/i);
   });
+  it("allows only the additive nullable shared-subject migration", () => {
+    const sql = readFileSync(
+      new URL(
+        "../../database/migrations/012_learning_record_subject.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(parseLearningRecordSubjectMigration(sql)).toHaveLength(1);
+    expect(sql).toContain("subject VARCHAR(64) NULL");
+    expect(sql).toContain("chk_records_subject");
+    expect(sql).toContain("idx_records_student_subject_date");
+    expect(() =>
+      parseLearningRecordSubjectMigration(sql.replace("NULL", "NOT NULL")),
+    ).toThrow();
+  });
   it("projects only public record fields and keeps original binding on version update", async () => {
     const row = {
       id: "1",
@@ -153,6 +189,7 @@ describe("S3 learning records", () => {
       author_user_id: "3",
       author_name: "合成人员",
       category: "缺" as const,
+      subject: null,
       content: "正文",
       occurred_on: "2000-01-01",
       created_at: "2000-01-01 00:00:00.000",
@@ -167,6 +204,7 @@ describe("S3 learning records", () => {
         "studentId",
         "author",
         "category",
+        "subject",
         "content",
         "occurredOn",
         "createdAt",
@@ -188,6 +226,7 @@ describe("S3 learning records", () => {
       updateRecord(db, {
         ...fields,
         category: "缺",
+        subject: "数学",
         id: "1",
         expectedVersion: 1,
       }),
@@ -196,5 +235,6 @@ describe("S3 learning records", () => {
       /SET.*(?:student_id|author_user_id)/,
     );
     expect(execute.mock.calls[0]![0]).toContain("AND version=?");
+    expect(execute.mock.calls[0]![1]).toContain("数学");
   });
 });

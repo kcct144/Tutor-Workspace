@@ -24,6 +24,7 @@
     "db:seed:tasks": "node database/seeds/tasks.mjs",
     "test:s5:api": "node tests/integration/tasks.mjs",
     "db:seed:assignments": "node database/seeds/task-assignments.mjs",
+    "db:seed:reading-plan": "node database/seeds/reading-composition-plan.mjs",
     "test:s6:api": "node tests/integration/task-assignments.mjs",
     "test:s8:foundation": "node tests/integration/auth-foundation.mjs",
     "test:s8:auth": "vitest run tests/unit/auth-session.test.ts",

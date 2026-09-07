@@ -1,3 +1,5 @@
+import type { Subject } from "./subjects";
+
 export const contractTypes = [
   "month",
   "half_year",
@@ -25,7 +27,7 @@ export type ContractStatus = (typeof contractStatuses)[number];
 export type TrialContractStatus = "active" | "terminated";
 export interface ContractWrite {
   studentId: string;
-  subject: string;
+  subject: Subject;
   contractType: ContractType;
   startDate: string | null;
   endDate: string | null;
@@ -51,7 +53,7 @@ export interface ContractQuery {
   pageSize?: number;
   keyword?: string;
   studentId?: string;
-  subject?: string;
+  subject?: Subject;
   contractType?: ContractType;
   status?: ContractStatus;
 }

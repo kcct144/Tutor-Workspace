@@ -36,7 +36,7 @@
 
 - 科目：从有效合同按学生批量去重聚合。
 - 到期时间：从有效时间合同取最早 `end_date`；无有效时间合同为 null。
-- 最近跟进：从学习记录取 `MAX(occurred_on)`；无记录为 null。
+- 最近跟进：从学习记录取 `MAX(occurred_on)`；无记录为 null。学习记录的可空 `subject` 不参与该聚合，`NULL` 仅表示综合/通用跟进。
 - 学习计划：从 `study_plan_students` 与文档表按 `{id,title}` 聚合；无关联为空数组。
 - 任务：从 `task_assignments` 读取；学生状态变化不修改任务记录。
 
@@ -105,6 +105,12 @@ S7 批准使用 `version`，新增迁移文件 `database/migrations/007_students
 - 同一学生的档案编辑和状态更新共享 version，任一成功都会使另一窗口的旧草稿冲突。
 - 服务端从当前登录会话取得操作上下文；浏览器不得传 actorId、ownerUserId 或 author 字段。
 - 联系方式原值仅在受控环境通过 `StudentEditView` 用于编辑；列表与详情只返回脱敏值。真实用户试用前必须由鉴权方案替换该明文回填边界。
+
+### 4.1 学习记录科目（012，已确认）
+
+`student_learning_records.subject` 为 `VARCHAR(64) NULL`，使用与合同、任务定义相同的科目值类型：非空时去除首尾空白后为 1–64 个 Unicode 字符；`NULL` 表示综合/通用跟进。数据库通过 `chk_records_subject` 限制空值或 trim 后 1–64 字符，并建立 `(student_id, subject, occurred_on, id)` 索引支持按学生的科目筛选。
+
+新增或编辑仅可写该记录自身的科目，不与合同建立外键或自动关联；历史记录保持 `NULL`，不做虚假回填。记录列表与详情 DTO 返回 `subject: string | null`；列表筛选可用非空科目，所有未筛选结果同时包含综合记录。
 
 ## 7. 关系保护与状态影响
 

@@ -6,6 +6,7 @@ import type {
   RecordQuery,
 } from "../../types/api/learning-records.ts";
 import type { Page } from "../../types/api/students.ts";
+import type { Subject } from "../../types/api/subjects.ts";
 import { executeWrite } from "./write.ts";
 import { likeValue } from "./contracts.ts";
 import { ApiError } from "../utils/api.ts";
@@ -15,6 +16,7 @@ interface RecordRow extends RowDataPacket {
   author_user_id: string;
   author_name: string;
   category: LearningRecord["category"];
+  subject: Subject | null;
   content: string;
   occurred_on: string;
   created_at: string;
@@ -27,6 +29,7 @@ export function projectRecord(row: RecordRow): LearningRecord {
     studentId: String(row.student_id),
     author: { id: String(row.author_user_id), name: row.author_name },
     category: row.category,
+    subject: row.subject,
     content: row.content,
     occurredOn: row.occurred_on,
     createdAt: row.created_at.replace(" ", "T") + "Z",
@@ -35,7 +38,7 @@ export function projectRecord(row: RecordRow): LearningRecord {
   };
 }
 const selection =
-  "SELECT r.id, r.student_id, r.author_user_id, u.name AS author_name, r.category, r.content, r.occurred_on, r.created_at, r.updated_at, r.version FROM student_learning_records r JOIN users u ON u.id=r.author_user_id";
+  "SELECT r.id, r.student_id, r.author_user_id, u.name AS author_name, r.category, r.subject, r.content, r.occurred_on, r.created_at, r.updated_at, r.version FROM student_learning_records r JOIN users u ON u.id=r.author_user_id";
 export async function requireRecordStudent(db: Connection, id: string) {
   const [rows] = await db.execute<RowDataPacket[]>(
     "SELECT id FROM students WHERE id=? LIMIT 1",
@@ -50,6 +53,10 @@ export function recordFilter(query: RecordQuery) {
   if (query.category) {
     clauses.push("r.category = ?");
     values.push(query.category);
+  }
+  if (query.subject) {
+    clauses.push("r.subject = ?");
+    values.push(query.subject);
   }
   if (query.dateFrom) {
     clauses.push("r.occurred_on >= ?");
@@ -107,17 +114,25 @@ export async function createRecord(
   await requireRecordStudent(db, input.studentId);
   const result = await executeWrite(
     db,
-    "INSERT INTO student_learning_records (student_id,author_user_id,category,content,occurred_on) VALUES (?,?,?,?,?)",
-    [input.studentId, actorId, input.category, input.content, input.occurredOn],
+    "INSERT INTO student_learning_records (student_id,author_user_id,category,subject,content,occurred_on) VALUES (?,?,?,?,?,?)",
+    [
+      input.studentId,
+      actorId,
+      input.category,
+      input.subject,
+      input.content,
+      input.occurredOn,
+    ],
   );
   return findRecord(db, String(result.insertId));
 }
 export async function updateRecord(db: Connection, input: RecordUpdate) {
   const result = await executeWrite(
     db,
-    "UPDATE student_learning_records SET category=?,content=?,occurred_on=?,version=version+1,updated_at=UTC_TIMESTAMP(3) WHERE id=? AND version=? AND version<4294967295",
+    "UPDATE student_learning_records SET category=?,subject=?,content=?,occurred_on=?,version=version+1,updated_at=UTC_TIMESTAMP(3) WHERE id=? AND version=? AND version<4294967295",
     [
       input.category,
+      input.subject,
       input.content,
       input.occurredOn,
       input.id,

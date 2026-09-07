@@ -9,6 +9,7 @@ import {
   parseMigration,
   parseStudentVersionMigration,
   parseExperienceStudentTrialMigration,
+  parseLearningRecordSubjectMigration,
 } from "../server/db/safety.ts";
 import { checkStudentVersion } from "./student-version.mjs";
 
@@ -58,6 +59,7 @@ const manifest = [
     tables: [],
     references: [],
   },
+  { version: "012_learning_record_subject", tables: [], references: [] },
 ];
 
 function parseApprovedMigration(version, sql, tables, references) {
@@ -69,6 +71,8 @@ function parseApprovedMigration(version, sql, tables, references) {
     return parseAuthorizationAuditMigration(sql);
   if (version === "011_experience_students_trial_contracts")
     return parseExperienceStudentTrialMigration(sql);
+  if (version === "012_learning_record_subject")
+    return parseLearningRecordSubjectMigration(sql);
   return parseMigration(sql, tables, references);
 }
 
@@ -123,6 +127,36 @@ async function checkExperienceTrialStructure(connection, applied) {
     indexColumns.some((column, index) => column !== expectedIndex[index])
   )
     throw new Error("体验学生或体验合同结构不符合批准定义。");
+}
+async function checkLearningRecordSubjectStructure(connection, applied) {
+  await assertApprovedDatabase(connection);
+  const [columns] = await connection.execute(
+    "SELECT IS_NULLABLE,CHARACTER_MAXIMUM_LENGTH FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND COLUMN_NAME=? LIMIT 1",
+    ["student_learning_records", "subject"],
+  );
+  const [checks] = await connection.execute(
+    "SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND CONSTRAINT_NAME=? AND CONSTRAINT_TYPE='CHECK' LIMIT 1",
+    ["student_learning_records", "chk_records_subject"],
+  );
+  const [indexes] = await connection.execute(
+    "SELECT SEQ_IN_INDEX,COLUMN_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND INDEX_NAME=? ORDER BY SEQ_IN_INDEX LIMIT 4",
+    ["student_learning_records", "idx_records_student_subject_date"],
+  );
+  const indexColumns = indexes.map((row) => String(row.COLUMN_NAME));
+  const expectedIndex = ["student_id", "subject", "occurred_on", "id"];
+  if (!applied) {
+    if (columns.length || checks.length || indexColumns.length)
+      throw new Error("发现未登记的学习记录科目DDL，停止人工核对。");
+    return;
+  }
+  if (
+    columns[0]?.IS_NULLABLE !== "YES" ||
+    Number(columns[0]?.CHARACTER_MAXIMUM_LENGTH) !== 64 ||
+    !checks.length ||
+    indexColumns.length !== expectedIndex.length ||
+    indexColumns.some((column, index) => column !== expectedIndex[index])
+  )
+    throw new Error("学习记录科目结构不符合批准定义。");
 }
 await runDatabaseCommand(async (connection) => {
   const [versionRows] = await connection.query("SELECT VERSION() AS version");
@@ -188,6 +222,8 @@ await runDatabaseCommand(async (connection) => {
             await checkAuthorizationAuditIndex(connection, true);
           if (migration.version === "011_experience_students_trial_contracts")
             await checkExperienceTrialStructure(connection, true);
+          if (migration.version === "012_learning_record_subject")
+            await checkLearningRecordSubjectStructure(connection, true);
           console.log(migration.version + " 已应用，跳过。");
           continue;
         }
@@ -204,6 +240,8 @@ await runDatabaseCommand(async (connection) => {
         await checkAuthorizationAuditIndex(connection, false);
       if (migration.version === "011_experience_students_trial_contracts")
         await checkExperienceTrialStructure(connection, false);
+      if (migration.version === "012_learning_record_subject")
+        await checkLearningRecordSubjectStructure(connection, false);
       for (const statement of migration.statements) {
         await assertApprovedDatabase(connection);
         await connection.query(statement);
@@ -214,6 +252,8 @@ await runDatabaseCommand(async (connection) => {
         await checkAuthorizationAuditIndex(connection, true);
       if (migration.version === "011_experience_students_trial_contracts")
         await checkExperienceTrialStructure(connection, true);
+      if (migration.version === "012_learning_record_subject")
+        await checkLearningRecordSubjectStructure(connection, true);
       await assertApprovedDatabase(connection);
       await connection.execute(
         "INSERT INTO schema_migrations (version, checksum) VALUES (?, ?)",

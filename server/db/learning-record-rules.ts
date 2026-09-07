@@ -12,6 +12,7 @@ import {
   shanghaiToday,
 } from "./contracts-rules.ts";
 import { parseStudentQuery } from "./student-query.ts";
+import { optionalSubject, requiredSubject } from "./subject-rules.ts";
 import { ApiError } from "../utils/api.ts";
 function invalid(message: string): never {
   throw new ApiError(400, "VALIDATION_ERROR", message);
@@ -41,6 +42,7 @@ export function parseRecordWrite(
   const input = body as Record<string, unknown>;
   const allowed = [
     "category",
+    "subject",
     "content",
     "occurredOn",
     ...(update ? ["id", "expectedVersion"] : ["studentId"]),
@@ -53,7 +55,13 @@ export function parseRecordWrite(
     invalid("正文去除首尾空白后须为1–10000字。");
   const occurredOn = dateOnly(input.occurredOn);
   if (occurredOn > today) invalid("发生日期不得晚于今天。");
-  const fields = { category: category(input.category), content, occurredOn };
+  const fields = {
+    category: category(input.category),
+    subject:
+      input.subject === undefined ? null : optionalSubject(input.subject),
+    content,
+    occurredOn,
+  };
   return update
     ? {
         ...fields,
@@ -73,6 +81,7 @@ export function parseRecordQuery(
           "page",
           "pageSize",
           "category",
+          "subject",
           "keyword",
           "dateFrom",
           "dateTo",
@@ -98,6 +107,8 @@ export function parseRecordQuery(
     keyword: pagination.keyword,
     category:
       input.category === undefined ? undefined : category(input.category),
+    subject:
+      input.subject === undefined ? undefined : requiredSubject(input.subject),
     dateFrom,
     dateTo,
   };

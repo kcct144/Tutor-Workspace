@@ -4,6 +4,7 @@ import type {
   RecordCategory,
   RecordFields,
 } from "../../types/api/learning-records";
+import type { Subject } from "../../types/api/subjects";
 import {
   getRecords,
   createRecord,
@@ -22,7 +23,8 @@ export function useLearningRecords(studentId: () => string) {
     page = ref(1),
     pageSize = 5;
   const keyword = ref(""),
-    category = ref<RecordCategory | undefined>();
+    category = ref<RecordCategory | undefined>(),
+    subject = ref<Subject | undefined>();
   const dates = ref<[string, string] | undefined>();
   const loading = ref(false),
     error = ref(""),
@@ -35,6 +37,7 @@ export function useLearningRecords(studentId: () => string) {
   const editing = ref<LearningRecord | null>(null);
   const draft = reactive<RecordFields>({
     category: "缺",
+    subject: null,
     content: "",
     occurredOn: "",
   });
@@ -59,6 +62,7 @@ export function useLearningRecords(studentId: () => string) {
           pageSize,
           keyword: keyword.value.trim() || undefined,
           category: category.value,
+          subject: subject.value,
           dateFrom: dates.value?.[0],
           dateTo: dates.value?.[1],
         },
@@ -77,11 +81,12 @@ export function useLearningRecords(studentId: () => string) {
   function resetFilters() {
     keyword.value = "";
     category.value = undefined;
+    subject.value = undefined;
     dates.value = undefined;
   }
   // Refresh list only; editing and draft retain their original version/content.
   useStudentInvalidation(refresh);
-  watch([keyword, category, dates], () => {
+  watch([keyword, category, subject, dates], () => {
     if (page.value !== 1) page.value = 1;
     else void refresh();
   });
@@ -110,10 +115,11 @@ export function useLearningRecords(studentId: () => string) {
       record
         ? {
             category: record.category,
+            subject: record.subject,
             content: record.content,
             occurredOn: record.occurredOn,
           }
-        : { category: "缺", content: "", occurredOn: "" },
+        : { category: "缺", subject: null, content: "", occurredOn: "" },
     );
     editError.value = "";
     conflict.value = false;
@@ -142,6 +148,7 @@ export function useLearningRecords(studentId: () => string) {
     try {
       const fields = {
         category: draft.category,
+        subject: draft.subject,
         content: draft.content,
         occurredOn: draft.occurredOn,
       };
@@ -187,6 +194,7 @@ export function useLearningRecords(studentId: () => string) {
       editing.value = record;
       Object.assign(draft, {
         category: record.category,
+        subject: record.subject,
         content: record.content,
         occurredOn: record.occurredOn,
       });
@@ -211,6 +219,7 @@ export function useLearningRecords(studentId: () => string) {
     pageSize,
     keyword,
     category,
+    subject,
     dates,
     loading,
     error,

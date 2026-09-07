@@ -1,7 +1,11 @@
+import type { Subject } from "./subjects";
+
 export const recordCategories = ["缺", "补", "强"] as const;
 export type RecordCategory = (typeof recordCategories)[number];
 export interface RecordFields {
   category: RecordCategory;
+  /** Null represents a comprehensive/general follow-up. */
+  subject: Subject | null;
   content: string;
   occurredOn: string;
 }
@@ -24,6 +28,7 @@ export interface RecordQuery {
   page?: number;
   pageSize?: number;
   category?: RecordCategory;
+  subject?: Subject;
   keyword?: string;
   dateFrom?: string;
   dateTo?: string;

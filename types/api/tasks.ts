@@ -1,8 +1,10 @@
+import type { Subject } from "./subjects";
+
 export const taskStatuses = ["enabled", "disabled"] as const;
 export type TaskStatus = (typeof taskStatuses)[number];
 export interface TaskWrite {
   title: string;
-  subject: string;
+  subject: Subject;
   description: string;
 }
 export interface TaskUpdate extends TaskWrite {
@@ -26,12 +28,12 @@ export interface TaskDefinition extends TaskWrite {
 export interface TaskOption {
   id: string;
   title: string;
-  subject: string;
+  subject: Subject;
 }
 export interface TaskQuery {
   page?: number;
   pageSize?: number;
   keyword?: string;
-  subject?: string;
+  subject?: Subject;
   status?: TaskStatus;
 }

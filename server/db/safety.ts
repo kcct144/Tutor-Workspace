@@ -32,6 +32,17 @@ export function parseExperienceStudentTrialMigration(sql: string): string[] {
   );
 }
 
+/** This additive migration is limited to an optional shared subject on records. */
+export function parseLearningRecordSubjectMigration(sql: string): string[] {
+  return parseExactMigration(
+    sql,
+    [
+      "ALTER TABLE student_learning_records ADD COLUMN subject VARCHAR(64) NULL AFTER category, ADD CONSTRAINT chk_records_subject CHECK ( subject IS NULL OR CHAR_LENGTH(TRIM(subject)) BETWEEN 1 AND 64 ), ADD INDEX idx_records_student_subject_date (student_id, subject, occurred_on, id)",
+    ],
+    "迁移超出已批准的学习记录科目字段范围。",
+  );
+}
+
 function parseExactMigration(
   sql: string,
   expectedStatements: readonly string[],

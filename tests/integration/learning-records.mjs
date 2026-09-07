@@ -57,6 +57,7 @@ await runDatabaseCommand(async (db) => {
         id: record.id,
         expectedVersion: record.version,
         category: record.category,
+        subject: record.subject,
         content: record.content,
         occurredOn: record.occurredOn,
         ...patch,
@@ -66,11 +67,11 @@ await runDatabaseCommand(async (db) => {
   try {
     const [migrations] = await db.execute(
       "SELECT version FROM schema_migrations WHERE version=? LIMIT 1",
-      ["003_learning_records"],
+      ["012_learning_record_subject"],
     );
     assert.equal(migrations.length, 1);
     const [rows] = await db.execute(
-      "SELECT id,author_user_id,content FROM student_learning_records WHERE student_id=? ORDER BY id LIMIT 3",
+      "SELECT id,author_user_id,content,subject FROM student_learning_records WHERE student_id=? ORDER BY id LIMIT 3",
       [studentId],
     );
     assert.ok(rows.length <= 2);
@@ -98,23 +99,58 @@ await runDatabaseCommand(async (db) => {
       await assert.rejects(
         inTransaction(db, async () => {
           const insert =
-            "INSERT INTO student_learning_records (student_id,author_user_id,category,content,occurred_on,version) VALUES (?,?,?,?,?,?)";
+            "INSERT INTO student_learning_records (student_id,author_user_id,category,subject,content,occurred_on,version) VALUES (?,?,?,?,?,?,?)";
           await executeWrite(db, insert, [
             studentId,
             actorId,
             "缺",
+            null,
             "S3事务内回滚样例",
             "2000-01-01",
             1,
           ]);
           assert.equal(await count(observer), beforeCount);
           const badValues = [
-            ["18446744073709551615", actorId, "缺", "正文", "2000-01-01", 1],
-            [studentId, "18446744073709551615", "缺", "正文", "2000-01-01", 1],
-            [studentId, actorId, "错", "正文", "2000-01-01", 1],
-            [studentId, actorId, "缺", " ", "2000-01-01", 1],
-            [studentId, actorId, "缺", "字".repeat(10001), "2000-01-01", 1],
-            [studentId, actorId, "缺", "正文", "2000-01-01", 0],
+            [
+              "18446744073709551615",
+              actorId,
+              "缺",
+              null,
+              "正文",
+              "2000-01-01",
+              1,
+            ],
+            [
+              studentId,
+              "18446744073709551615",
+              "缺",
+              null,
+              "正文",
+              "2000-01-01",
+              1,
+            ],
+            [studentId, actorId, "错", null, "正文", "2000-01-01", 1],
+            [studentId, actorId, "缺", " ", "正文", "2000-01-01", 1],
+            [
+              studentId,
+              actorId,
+              "缺",
+              "字".repeat(65),
+              "正文",
+              "2000-01-01",
+              1,
+            ],
+            [studentId, actorId, "缺", null, " ", "2000-01-01", 1],
+            [
+              studentId,
+              actorId,
+              "缺",
+              null,
+              "字".repeat(10001),
+              "2000-01-01",
+              1,
+            ],
+            [studentId, actorId, "缺", null, "正文", "2000-01-01", 0],
           ];
           for (const values of badValues)
             await assert.rejects(executeWrite(db, insert, values), (error) =>
@@ -144,6 +180,7 @@ await runDatabaseCommand(async (db) => {
           {
             studentId,
             category: index ? "补" : "缺",
+            subject: index ? "数学" : null,
             content: apiContents[index],
             occurredOn: index ? "2000-01-02" : "2000-01-01",
           },
@@ -154,6 +191,7 @@ await runDatabaseCommand(async (db) => {
     const baseFields = {
       studentId,
       category: "缺",
+      subject: null,
       content: apiContents[0],
       occurredOn: "2000-01-01",
     };
@@ -165,6 +203,8 @@ await runDatabaseCommand(async (db) => {
       { expectedVersion: 1 },
       { id: "1" },
       { category: "其他" },
+      { subject: " " },
+      { subject: "学".repeat(65) },
       { content: "\n \t" },
       { content: "字".repeat(10001) },
       { occurredOn: "9999-12-31" },
@@ -220,6 +260,7 @@ await runDatabaseCommand(async (db) => {
     phase = "编辑边界/作者绑定/并发版本";
     records[0] = await update(records[0], {
       category: "强",
+      subject: "英语",
       content: " \n" + longContent + "\t ",
       occurredOn: shanghaiToday(),
     });
@@ -234,6 +275,7 @@ await runDatabaseCommand(async (db) => {
             id: records[0].id,
             expectedVersion: records[0].version,
             category: "强",
+            subject: "英语",
             content: apiContents[0],
             occurredOn: shanghaiToday(),
           }),
@@ -254,6 +296,7 @@ await runDatabaseCommand(async (db) => {
         "studentId",
         "author",
         "category",
+        "subject",
         "content",
         "occurredOn",
         "createdAt",
@@ -265,6 +308,7 @@ await runDatabaseCommand(async (db) => {
     phase = "最近跟进回退与筛选分页";
     records[1] = await update(records[1], {
       category: "补",
+      subject: "数学",
       content: apiContents[1],
       occurredOn: "2000-01-02",
     });
@@ -294,18 +338,23 @@ await runDatabaseCommand(async (db) => {
     await checkFollowUp(shanghaiToday());
     records[0] = await update(records[0], {
       category: "缺",
+      subject: null,
       content: apiContents[0],
       occurredOn: "2000-01-01",
     });
     await checkFollowUp("2000-01-02");
     const filtered = await list({
       category: "补",
+      subject: "数学",
       dateFrom: "2000-01-02",
       dateTo: "2000-01-02",
       keyword: "固定验收乙",
     });
     assert.equal(filtered.total, 1);
     assert.equal(filtered.items[0].id, records[1].id);
+    const subjectFiltered = await list({ subject: "数学" });
+    assert.equal(subjectFiltered.total, 1);
+    assert.equal(subjectFiltered.items[0].id, records[1].id);
     const first = await list({ page: "1", pageSize: "1" }),
       second = await list({ page: "2", pageSize: "1" });
     assert.equal(first.total, 2);

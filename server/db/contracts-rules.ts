@@ -8,6 +8,7 @@ import {
 } from "../../types/api/contracts.ts";
 import { ApiError } from "../utils/api.ts";
 import { parseStudentId, parseStudentQuery } from "./student-query.ts";
+import { requiredSubject } from "./subject-rules.ts";
 
 export function shanghaiToday(now = new Date()): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -51,11 +52,6 @@ export function dateOnly(value: unknown): string {
     invalid("请填写有效日期。");
   return value;
 }
-function text(value: unknown, max: number): string {
-  if (typeof value !== "string" || [...value].length > max)
-    invalid("文本参数无效或超长。");
-  return value.trim();
-}
 export function parseContractWrite(body: unknown, update: true): ContractUpdate;
 export function parseContractWrite(
   body: unknown,
@@ -82,8 +78,7 @@ export function parseContractWrite(
   if (Object.keys(input).some((key) => !fields.includes(key)))
     invalid("请求含不可写字段，编号和操作人不能由浏览器提供。");
   const studentId = positiveId(input.studentId);
-  const subject = text(input.subject, 64);
-  if (!subject) invalid("科目不能为空。");
+  const subject = requiredSubject(input.subject);
   if (!contractTypes.some((type) => type === input.contractType))
     invalid("合同类型无效。");
   const contractType = input.contractType as ContractWrite["contractType"];
@@ -151,8 +146,7 @@ export function parseContractQuery(
   const studentId =
     input.studentId === undefined ? undefined : positiveId(input.studentId);
   const subject =
-    input.subject === undefined ? undefined : text(input.subject, 64);
-  if (subject === "") invalid("筛选科目不能为空。");
+    input.subject === undefined ? undefined : requiredSubject(input.subject);
   if (
     input.contractType !== undefined &&
     !contractTypes.some((v) => v === input.contractType)
