@@ -22,3 +22,11 @@ logs
 .env
 .env.*
 !.env.example
+
+# Private curriculum imports and one-off database maintenance scripts
+/database/local-seeds/
+/tools/local/
+/material/
+
+# Locally generated curriculum documents
+/拼读计划-*.docx
