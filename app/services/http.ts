@@ -64,7 +64,7 @@ export async function apiGet<T>(
 
 export async function apiWrite<T>(
   url: string,
-  method: "POST" | "PATCH",
+  method: "POST" | "PATCH" | "PUT",
   body: object,
 ): Promise<T> {
   const token = csrfToken();

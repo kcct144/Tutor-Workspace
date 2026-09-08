@@ -1,0 +1,23 @@
+CREATE TABLE attendance_records (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  student_id BIGINT UNSIGNED NOT NULL,
+  attendance_date DATE NOT NULL,
+  period VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  status VARCHAR(24) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  created_by BIGINT UNSIGNED NOT NULL,
+  updated_by BIGINT UNSIGNED NOT NULL,
+  version INT UNSIGNED NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  CONSTRAINT fk_attendance_records_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT fk_attendance_records_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT fk_attendance_records_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT chk_attendance_records_date CHECK (attendance_date >= '1900-01-01'),
+  CONSTRAINT chk_attendance_records_period CHECK (period IN ('morning', 'afternoon', 'evening')),
+  CONSTRAINT chk_attendance_records_status CHECK (status IN ('scheduled', 'present', 'sick_leave', 'personal_leave', 'absent')),
+  CONSTRAINT chk_attendance_records_version CHECK (version > 0),
+  UNIQUE KEY uq_attendance_student_date_period (student_id, attendance_date, period),
+  INDEX idx_attendance_month_period_status (attendance_date, period, status, student_id),
+  INDEX idx_attendance_student_date (student_id, attendance_date, id),
+  INDEX idx_attendance_updated (updated_at, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_as_cs;

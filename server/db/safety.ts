@@ -59,6 +59,22 @@ export function parseAuditScoreRecordMigration(sql: string): string[] {
   );
 }
 
+/** S10 permits one standalone attendance table with fixed period/status values. */
+export function parseAttendanceRecordsMigration(sql: string): string[] {
+  return parseMigration(sql, ["attendance_records"], ["students", "users"]);
+}
+
+/** S10 extends only the audit entity CHECK for attendance writes. */
+export function parseAuditAttendanceRecordMigration(sql: string): string[] {
+  return parseExactMigration(
+    sql,
+    [
+      "ALTER TABLE audit_logs DROP CHECK chk_audit_logs_entity_type, ADD CONSTRAINT chk_audit_logs_entity_type CHECK (entity_type IN ('student', 'contract', 'learning_record', 'score_record', 'attendance_record', 'task', 'task_assignment', 'user_account'))",
+    ],
+    "迁移超出已批准的出勤审计实体范围。",
+  );
+}
+
 function parseExactMigration(
   sql: string,
   expectedStatements: readonly string[],

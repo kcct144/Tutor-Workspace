@@ -8,6 +8,7 @@ export const auditEntityTypes = [
   "contract",
   "learning_record",
   "score_record",
+  "attendance_record",
   "task",
   "task_assignment",
   "user_account",

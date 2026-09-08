@@ -59,6 +59,18 @@ async function logout() {
             :class="{ active: route.path.startsWith('/tasks/assignments') }"
             >任务分配</NuxtLink
           >
+          <NuxtLink
+            to="/scores"
+            class="nav-item"
+            :class="{ active: route.path.startsWith('/scores') }"
+            >成绩记录</NuxtLink
+          >
+          <NuxtLink
+            to="/attendance"
+            class="nav-item"
+            :class="{ active: route.path.startsWith('/attendance') }"
+            >出勤管理</NuxtLink
+          >
         </nav>
         <div class="header-user">
           <span class="status-dot" />{{ user?.username ?? "正在读取登录状态" }}
