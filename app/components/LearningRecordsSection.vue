@@ -120,7 +120,17 @@ const columns: TableColumnType[] = [
         <span v-if="column.key === 'content'" class="record-content">{{
           record.content
         }}</span>
-        <ATag v-else-if="column.key === 'category'">{{ record.category }}</ATag>
+        <ATag
+          v-else-if="column.key === 'category'"
+          :color="
+            record.category === '缺'
+              ? 'error'
+              : record.category === '补'
+                ? 'success'
+                : 'processing'
+          "
+          >{{ record.category }}</ATag
+        >
         <ATag v-else-if="column.key === 'subject'" class="subject-tag">{{
           record.subject ?? "综合/通用"
         }}</ATag>
