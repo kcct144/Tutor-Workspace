@@ -8,7 +8,7 @@
 
 ## 交付范围
 
-仅/tasks从mock切换为真实MySQL，新增tasks及7个API；保留表格、筛选、弹窗及启停入口。分配人数由API固定0。没有创建task_assignments，没有修改/tasks/assignments、首页任务卡片或学生详情任务区的业务逻辑，没有Redis、鉴权、删除、系列、自动派发或审计扩展。
+仅/tasks从mock切换为真实MySQL，新增tasks及7个API；保留表格、筛选、弹窗及启停入口。分配人数由API固定0。没有创建task_assignments，没有修改/tasks/assignments、首页任务卡片或学生详情任务区的业务逻辑，没有鉴权、删除、系列、自动派发或审计扩展。
 
 开工完整阅读AGENTS、全栈规则、实施计划、任务PRD与模型；工作区起始干净。旧草案的草稿状态、可空字段已按本轮明确裁决更新。任务mock/service/type仍被S6分配原型共同依赖，不是/tasks专用文件；保留并标注开发负责人/S6验收移除的TODO，真实/tasks不再导入它们。
 

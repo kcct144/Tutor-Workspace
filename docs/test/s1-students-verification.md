@@ -10,7 +10,7 @@
 
 本报告保留S1交付时的历史结果。S2现已将学生科目/到期时间接入合同聚合，最新行为及回归结果见[S2报告](s2-contracts-delivery.md)，S1当时的空聚合说明不再作为当前验收口径。
 
-仅实现S1；计划和学生PRD/模型已同步为已确认。未提前实现合同、学习记录、计划、任务、Redis或写API；未安装依赖、未修改真实.env、未提交Git。此前已存在的AGENTS.md、pnpm-lock.yaml修改及全栈规则文件均保留。
+仅实现S1；计划和学生PRD/模型已同步为已确认。未提前实现合同、学习记录、计划、任务或写API；未安装依赖、未修改真实.env、未提交Git。此前已存在的AGENTS.md、pnpm-lock.yaml修改及全栈规则文件均保留。
 
 数据库连接前校验配置白名单，连接后通过DATABASE()确认批准库 `tutor_workspace` 再进行操作。迁移成功登记000/001，仅创建schema_migrations、users、students；显式装载1名合成人员和12名合成学生。无清库、切库、数据库创建删除或其他库修改。未读取/展示真实配置值，仅脚本与应用运行时加载.env供连接使用。
 
@@ -20,12 +20,12 @@
 
 统一 `{status:'ok'|'error', msg, data}`；成功HTTP200，校验错误400、学生不存在404、数据库故障503。所有学生接口 `Cache-Control: no-store`，不返回SQL、驱动异常或连接值。无鉴权，不用于真实数据或公网。
 
-| 路由                      | 参数                                                                              | 输出/调用者                                                       |
-| ------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| GET /api/students/list    | page默认1、pageSize默认8最大100；keyword可选≤64字符，grade/status可选且须在枚举内 | data={items,total,page,pageSize}；学生列表                        |
-| GET /api/students/detail  | id：正整数十进制字符串，最大无符号BIGINT；不存在404                               | StudentDetail；学生详情基本信息                                   |
-| GET /api/students/options | page默认1、pageSize默认20最大100、keyword可选≤64字符                              | 分页列表，仅id/name/grade；供后续切片接入，S1不改合同/任务选择器  |
-| GET /api/health           | 无                                                                                | app、mysqlConfigured、redisConfigured；仅配置存在性，不等于连通性 |
+| 路由                      | 参数                                                                              | 输出/调用者                                                      |
+| ------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| GET /api/students/list    | page默认1、pageSize默认8最大100；keyword可选≤64字符，grade/status可选且须在枚举内 | data={items,total,page,pageSize}；学生列表                       |
+| GET /api/students/detail  | id：正整数十进制字符串，最大无符号BIGINT；不存在404                               | StudentDetail；学生详情基本信息                                  |
+| GET /api/students/options | page默认1、pageSize默认20最大100、keyword可选≤64字符                              | 分页列表，仅id/name/grade；供后续切片接入，S1不改合同/任务选择器 |
+| GET /api/health           | 无                                                                                | app、mysqlConfigured；仅配置存在性，不等于连通性                 |
 
 - 页码为1–1000000000整数；非法分页、数组值、非法枚举、未知参数（包括浏览器actorId）均400；越界页为空但total准确。
 - 姓名采用参数化子串LIKE，转义 `%`、`_`、`!`；年级/状态等值组合筛选；稳定id倒序。列表与count在同一REPEATABLE READ事务内，无N+1。
@@ -107,5 +107,5 @@ pnpm build
 - DDL不能整体事务回滚，不提供自动破坏性down；应用回退保留数据，结构修复须另行审批。
 - 构建有依赖链的DEP0155弃用和插件耗时提示，未阻断构建；未为此升级依赖或扩大改动。
 - 非学生模块保留已有“原型数据”标记。旧学生原型service/type仍被这些模块依赖，开发负责人在对应切片授权并验收后清理。
-- 依赖未改变：Nuxt4.5.2、Vue3.5.42、Ant Design Vue4.2.6、mysql2 3.24.3、ioredis6.0.0、TypeScript6.0.3、Vitest4.1.11。
+- 依赖未改变：Nuxt4.5.2、Vue3.5.42、Ant Design Vue4.2.6、mysql2 3.24.3、TypeScript6.0.3、Vitest4.1.11。
 - S1无新增业务决策阻塞。请总指挥审阅并安排验收；未开始S2，后续切片仍需授权。

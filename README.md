@@ -26,7 +26,6 @@ pnpm dev --host 127.0.0.1
 - `NUXT_PUBLIC_APP_URL`：浏览器访问地址。
 - `NUXT_MYSQL_HOST`、`NUXT_MYSQL_PORT`、`NUXT_MYSQL_DATABASE`、`NUXT_MYSQL_USER`、`NUXT_MYSQL_PASSWORD`：MySQL 连接参数。
 - `NUXT_MYSQL_SSL`：需要 TLS 时填 `true`；应用不会跳过证书验证。
-- `NUXT_REDIS_URL` 或 Redis 分项变量：当前可选，未配置时应用不连接 Redis。
 
 不要将真实配置、密码或完整联系方式放入 Git、日志、截图或文档。
 

@@ -16,7 +16,6 @@ export default defineNuxtConfig({
       password: "",
       ssl: false,
     },
-    redis: { host: "", port: 6379, password: "", db: 0, url: "" },
     public: { appUrl: "http://localhost:3000" },
   },
   vite: {
