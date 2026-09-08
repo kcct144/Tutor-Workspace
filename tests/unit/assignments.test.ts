@@ -130,11 +130,23 @@ describe("S6 input and data rules", () => {
     const ids = Array.from({ length: 100 }, (_, i) => String(i + 1));
     const execute = vi
       .fn()
-      .mockResolvedValueOnce([[{ id: "1", status: "enabled" }]])
+      .mockResolvedValueOnce([
+        [{ id: "1", status: "enabled", study_plan_id: null }],
+      ])
       .mockResolvedValueOnce([ids.map((id) => ({ id }))])
       .mockResolvedValueOnce([[]])
       .mockResolvedValueOnce([{ affectedRows: 100 }])
-      .mockResolvedValueOnce([ids.map((id) => ({ id }))]);
+      .mockResolvedValueOnce([ids.map((id) => ({ id }))])
+      .mockResolvedValueOnce([
+        ids.map((id) => ({
+          id,
+          student_id: id,
+          status: "pending",
+          due_date: today,
+          study_plan_id_snapshot: null,
+        })),
+      ])
+      .mockResolvedValue([{ affectedRows: 1 }]);
     const query = guard(),
       db = { execute, query } as unknown as Connection;
     expect(
@@ -147,10 +159,17 @@ describe("S6 input and data rules", () => {
       ).createdCount,
     ).toBe(100);
     expect(execute.mock.calls[0]![0]).toContain("FOR UPDATE");
-    expect(execute.mock.calls[3]![1]).toHaveLength(400);
+    expect(execute.mock.calls[3]![1]).toHaveLength(500);
     expect(
-      execute.mock.calls.filter((call) => String(call[0]).startsWith("INSERT")),
+      execute.mock.calls.filter((call) =>
+        String(call[0]).startsWith("INSERT INTO task_assignments"),
+      ),
     ).toHaveLength(1);
+    expect(
+      execute.mock.calls.filter((call) =>
+        String(call[0]).startsWith("INSERT INTO audit_logs"),
+      ),
+    ).toHaveLength(100);
     expect(query).toHaveBeenCalled();
   });
   it("no-op is exact-version only; competing completed update remains 409", async () => {
@@ -174,6 +193,7 @@ describe("S6 input and data rules", () => {
       const result = completeAssignment(
         db,
         { id: "1", completed: true, expectedVersion: 1 },
+        "1",
         today,
       );
       if (version === 1) expect((await result).version).toBe(1);
@@ -189,6 +209,7 @@ describe("S6 input and data rules", () => {
       completeAssignment(
         db,
         { id: "1", completed: false, expectedVersion: 1 },
+        "1",
         today,
       ),
     ).rejects.toMatchObject({ statusCode: 409 });

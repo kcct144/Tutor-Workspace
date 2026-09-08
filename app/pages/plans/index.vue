@@ -173,6 +173,46 @@ onBeforeRouteLeave(() => canLeave());
             >
           </div>
           <PlanMarkdown v-else :content="selectedPlan.content" />
+          <section class="plan-task-progress-panel">
+            <h3>关联任务</h3>
+            <p v-if="!selectedPlan.relatedTasks.length" class="muted-cell">
+              暂无关联任务
+            </p>
+            <div v-else class="plan-task-list">
+              <article v-for="task in selectedPlan.relatedTasks" :key="task.id">
+                <strong>{{ task.title }}</strong>
+                <span
+                  >{{ task.subject }} ·
+                  {{ task.status === "enabled" ? "启用" : "停用" }}</span
+                >
+                <small>已分配 {{ task.assignmentCount }} 人</small>
+              </article>
+            </div>
+          </section>
+          <section class="plan-task-progress-panel">
+            <h3>关联学生任务完成度</h3>
+            <p v-if="!selectedPlan.studentProgress.length" class="muted-cell">
+              暂无关联学生
+            </p>
+            <div v-else class="plan-task-list">
+              <article
+                v-for="item in selectedPlan.studentProgress"
+                :key="item.student.id"
+              >
+                <NuxtLink :to="'/students/' + item.student.id">{{
+                  item.student.name
+                }}</NuxtLink>
+                <span>{{ item.student.grade ?? "年级待确认" }}</span>
+                <template v-if="item.progressState === 'active'"
+                  ><strong
+                    >{{ item.completedAssignments }} /
+                    {{ item.totalAssignments }}</strong
+                  ><AProgress :percent="item.progressPercent ?? 0" size="small"
+                /></template>
+                <small v-else>暂无任务</small>
+              </article>
+            </div>
+          </section>
         </template>
         <div
           v-else-if="!detailLoading && !detailError"
@@ -187,5 +227,35 @@ onBeforeRouteLeave(() => canLeave());
 <style scoped>
 .plan-pagination {
   padding: 16px;
+}
+.plan-task-progress-panel {
+  border-top: 1px solid #e4e9e8;
+  margin-top: 24px;
+  padding-top: 18px;
+}
+.plan-task-progress-panel h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+.plan-task-list {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.plan-task-list article {
+  border: 1px solid #e4e9e8;
+  border-radius: 8px;
+  padding: 10px;
+}
+.plan-task-list strong,
+.plan-task-list span,
+.plan-task-list small {
+  display: block;
+  margin-top: 4px;
+}
+.plan-task-list a {
+  color: #236c57;
+  font-weight: 700;
 }
 </style>

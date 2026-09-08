@@ -6,10 +6,15 @@ import type {
   PlanListItem,
   PlanQuery,
   PlanUpdate,
+  PlanStudentProgress,
+  PlanTaskProgress,
 } from "../../types/api/study-plans.ts";
+import type { TaskDefinition } from "../../types/api/tasks.ts";
 import { likeValue } from "./contracts.ts";
 import { executeWrite } from "./write.ts";
 import { ApiError } from "../utils/api.ts";
+import { taskAssignmentCounts } from "./task-assignments.ts";
+
 interface PlanRow extends RowDataPacket {
   id: string;
   title: string;
@@ -21,6 +26,26 @@ interface PlanRow extends RowDataPacket {
   owner_user_id: string;
   owner_name: string;
 }
+
+interface TaskRow extends RowDataPacket {
+  id: string;
+  title: string;
+  subject: string;
+  description: string;
+  status: TaskDefinition["status"];
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ProgressRow extends RowDataPacket {
+  student_id: string;
+  student_name: string;
+  grade: string | null;
+  completed_assignments: number;
+  total_assignments: number;
+}
+
 export function projectPlanList(row: PlanRow): PlanListItem {
   return {
     id: String(row.id),
@@ -30,14 +55,18 @@ export function projectPlanList(row: PlanRow): PlanListItem {
     version: row.version,
   };
 }
+
 export function projectPlanDetail(row: PlanRow): PlanDetail {
   return {
     ...projectPlanList(row),
     content: row.content,
     createdAt: row.created_at.replace(" ", "T") + "Z",
     owner: { id: String(row.owner_user_id), name: row.owner_name },
+    relatedTasks: [],
+    studentProgress: [],
   };
 }
+
 export async function listPlans(
   db: Connection,
   query: PlanQuery & { page: number; pageSize: number },
@@ -65,6 +94,102 @@ export async function listPlans(
     pageSize: query.pageSize,
   };
 }
+
+export async function listPlanOptions(
+  db: Connection,
+  query: PlanQuery & { page: number; pageSize: number },
+): Promise<Page<PlanTag>> {
+  const where = query.keyword
+    ? " WHERE title LIKE ? ESCAPE '!' OR summary LIKE ? ESCAPE '!'"
+    : "";
+  const values = query.keyword
+    ? [likeValue(query.keyword), likeValue(query.keyword)]
+    : [];
+  const [counts] = await db.execute<RowDataPacket[]>(
+    "SELECT COUNT(*) AS total FROM study_plan_documents" + where + " LIMIT 1",
+    values,
+  );
+  const [rows] = await db.execute<RowDataPacket[]>(
+    "SELECT id,title FROM study_plan_documents" +
+      where +
+      " ORDER BY updated_at DESC,id DESC LIMIT ? OFFSET ?",
+    [...values, query.pageSize, (query.page - 1) * query.pageSize],
+  );
+  return {
+    items: rows.map((row) => ({
+      id: String(row.id),
+      title: String(row.title),
+    })),
+    total: Number(counts[0]!.total),
+    page: query.page,
+    pageSize: query.pageSize,
+  };
+}
+
+function progress(
+  plan: PlanTag,
+  completedAssignments: number,
+  totalAssignments: number,
+): PlanTaskProgress {
+  return {
+    plan,
+    completedAssignments,
+    totalAssignments,
+    progressPercent: totalAssignments
+      ? Math.round((completedAssignments / totalAssignments) * 100)
+      : null,
+    progressState: totalAssignments ? "active" : "empty",
+  };
+}
+
+async function planStudentProgress(
+  db: Connection,
+  plan: PlanTag,
+): Promise<PlanStudentProgress[]> {
+  const [rows] = await db.execute<ProgressRow[]>(
+    "SELECT ps.student_id,s.name AS student_name,s.grade,COALESCE(a.completed_assignments,0) AS completed_assignments,COALESCE(a.total_assignments,0) AS total_assignments FROM study_plan_students ps JOIN students s ON s.id=ps.student_id LEFT JOIN (SELECT student_id,SUM(status='completed') AS completed_assignments,COUNT(*) AS total_assignments FROM task_assignments WHERE study_plan_id_snapshot=? GROUP BY student_id) a ON a.student_id=ps.student_id WHERE ps.plan_id=? ORDER BY s.name,s.id LIMIT 100",
+    [plan.id, plan.id],
+  );
+  return rows.map((row) => ({
+    student: {
+      id: String(row.student_id),
+      name: row.student_name,
+      grade: row.grade,
+    },
+    ...progress(
+      plan,
+      Number(row.completed_assignments),
+      Number(row.total_assignments),
+    ),
+  }));
+}
+
+async function relatedPlanTasks(
+  db: Connection,
+  plan: PlanTag,
+): Promise<TaskDefinition[]> {
+  const [rows] = await db.execute<TaskRow[]>(
+    "SELECT id,title,subject,description,status,version,created_at,updated_at FROM tasks WHERE study_plan_id=? ORDER BY updated_at DESC,id DESC LIMIT 100",
+    [plan.id],
+  );
+  const counts = await taskAssignmentCounts(
+    db,
+    rows.map((row) => String(row.id)),
+  );
+  return rows.map((row) => ({
+    id: String(row.id),
+    title: row.title,
+    subject: row.subject,
+    description: row.description,
+    status: row.status,
+    version: row.version,
+    createdAt: row.created_at.replace(" ", "T") + "Z",
+    updatedAt: row.updated_at.replace(" ", "T") + "Z",
+    assignmentCount: counts.get(String(row.id)) ?? 0,
+    studyPlan: plan,
+  }));
+}
+
 export async function findPlan(
   db: Connection,
   id: string,
@@ -74,8 +199,13 @@ export async function findPlan(
     [id],
   );
   if (!rows[0]) throw new ApiError(404, "NOT_FOUND", "未找到学习计划。");
-  return projectPlanDetail(rows[0]);
+  const plan = projectPlanDetail(rows[0]);
+  const tag: PlanTag = { id: plan.id, title: plan.title };
+  const relatedTasks = await relatedPlanTasks(db, tag);
+  const studentProgress = await planStudentProgress(db, tag);
+  return { ...plan, relatedTasks, studentProgress };
 }
+
 export async function updatePlan(db: Connection, input: PlanUpdate) {
   const result = await executeWrite(
     db,
@@ -92,6 +222,38 @@ export async function updatePlan(db: Connection, input: PlanUpdate) {
   }
   return findPlan(db, input.id);
 }
+
+export async function studentPlanProgress(
+  db: Connection,
+  studentId: string,
+): Promise<PlanTaskProgress[]> {
+  const [students] = await db.execute<RowDataPacket[]>(
+    "SELECT id FROM students WHERE id=? LIMIT 1",
+    [studentId],
+  );
+  if (!students.length) throw new ApiError(404, "NOT_FOUND", "未找到学生。");
+  const [rows] = await db.execute<
+    Array<
+      RowDataPacket & {
+        plan_id: string;
+        title: string;
+        completed_assignments: number;
+        total_assignments: number;
+      }
+    >
+  >(
+    "SELECT ps.plan_id,p.title,COALESCE(a.completed_assignments,0) AS completed_assignments,COALESCE(a.total_assignments,0) AS total_assignments FROM study_plan_students ps JOIN study_plan_documents p ON p.id=ps.plan_id LEFT JOIN (SELECT study_plan_id_snapshot,SUM(status='completed') AS completed_assignments,COUNT(*) AS total_assignments FROM task_assignments WHERE student_id=? AND study_plan_id_snapshot IS NOT NULL GROUP BY study_plan_id_snapshot) a ON a.study_plan_id_snapshot=ps.plan_id WHERE ps.student_id=? ORDER BY p.id LIMIT 100",
+    [studentId, studentId],
+  );
+  return rows.map((row) =>
+    progress(
+      { id: String(row.plan_id), title: row.title },
+      Number(row.completed_assignments),
+      Number(row.total_assignments),
+    ),
+  );
+}
+
 export async function studentPlanTags(db: Connection, ids: string[]) {
   const result = new Map<string, PlanTag[]>();
   if (!ids.length) return result;

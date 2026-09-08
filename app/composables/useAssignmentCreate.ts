@@ -1,5 +1,6 @@
-import { ref } from "vue";
+import { ref, watch, onScopeDispose } from "vue";
 import { createAssignments } from "~/services/task-assignments";
+import { getTask } from "~/services/tasks";
 import { ServiceError } from "~/services/http";
 import { notifyTaskChange } from "./useTaskInvalidation";
 export function useAssignmentCreate() {
@@ -7,6 +8,9 @@ export function useAssignmentCreate() {
     saving = ref(false),
     error = ref(""),
     notice = ref("");
+  const selectedPlanName = ref<string | null>(null),
+    taskLookupError = ref("");
+  let taskController: AbortController | undefined;
   const form = ref<{
     taskId: string | undefined;
     studentIds: string[];
@@ -16,8 +20,32 @@ export function useAssignmentCreate() {
     if (saving.value) return;
     form.value = { taskId: undefined, studentIds: [], dueDate: "" };
     error.value = "";
+    selectedPlanName.value = null;
+    taskLookupError.value = "";
     open.value = true;
   }
+  watch(
+    () => form.value.taskId,
+    async (id) => {
+      taskController?.abort();
+      selectedPlanName.value = null;
+      taskLookupError.value = "";
+      if (!id) return;
+      const request = new AbortController();
+      taskController = request;
+      try {
+        const task = await getTask(id, request.signal);
+        if (!request.signal.aborted)
+          selectedPlanName.value = task.studyPlan?.title ?? null;
+      } catch (cause) {
+        if (!request.signal.aborted)
+          taskLookupError.value =
+            cause instanceof ServiceError
+              ? cause.message
+              : "无法读取任务计划关联，请重新选择任务。";
+      }
+    },
+  );
   function close() {
     if (!saving.value) open.value = false;
   }
@@ -53,5 +81,17 @@ export function useAssignmentCreate() {
       saving.value = false;
     }
   }
-  return { open, saving, error, notice, form, start, close, save };
+  onScopeDispose(() => taskController?.abort());
+  return {
+    open,
+    saving,
+    error,
+    notice,
+    form,
+    selectedPlanName,
+    taskLookupError,
+    start,
+    close,
+    save,
+  };
 }

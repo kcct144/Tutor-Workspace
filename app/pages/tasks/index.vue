@@ -25,6 +25,7 @@ const {
   save,
   changeStatus,
   loadTaskSubjects,
+  loadTaskPlans,
 } = useTasks();
 const statusOptions = [
   { value: "enabled", label: "启用" },
@@ -33,6 +34,7 @@ const statusOptions = [
 const columns: TableColumnType[] = [
   { title: "任务名称", key: "title", width: 300 },
   { title: "科目", key: "subject", width: 100 },
+  { title: "学习计划", key: "studyPlan", width: 180 },
   { title: "状态", key: "status", width: 100 },
   { title: "分配人数", key: "assignmentCount", width: 100 },
   { title: "更新时间", key: "updatedAt", width: 170 },
@@ -113,6 +115,15 @@ const columns: TableColumnType[] = [
           <span v-else-if="column.key === 'subject'" class="muted-cell">{{
             record.subject
           }}</span>
+          <NuxtLink
+            v-else-if="column.key === 'studyPlan' && record.studyPlan"
+            class="table-action-link"
+            :to="{ path: '/plans', query: { planId: record.studyPlan.id } }"
+            >{{ record.studyPlan.title }}</NuxtLink
+          >
+          <span v-else-if="column.key === 'studyPlan'" class="muted-cell"
+            >未关联</span
+          >
           <ATag
             v-else-if="column.key === 'status'"
             class="task-definition-status"
@@ -186,6 +197,16 @@ const columns: TableColumnType[] = [
             v-model:value="form.status"
             :disabled="saving || !editingId"
             :options="statusOptions"
+        /></label>
+        <label
+          >学习计划（可选）<RemoteSelect
+            :model-value="form.studyPlanId ?? undefined"
+            :loader="loadTaskPlans"
+            :disabled="saving"
+            allow-clear
+            placeholder="暂不关联学习计划"
+            aria-label="关联学习计划"
+            @update:model-value="(value) => (form.studyPlanId = value ?? null)"
         /></label>
         <label
           >任务说明<textarea

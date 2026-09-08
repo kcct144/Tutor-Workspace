@@ -32,12 +32,23 @@ function status(value: unknown): TaskStatus {
     invalid("任务状态只能为启用或停用。");
   return value as TaskStatus;
 }
+function studyPlanId(value: unknown): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  return positiveId(value);
+}
 export function parseTaskWrite(value: unknown): TaskWrite {
-  const input = object(value, ["title", "subject", "description"]);
+  const input = object(value, [
+    "title",
+    "subject",
+    "description",
+    "studyPlanId",
+  ]);
   return {
     title: text(input.title, 160, "任务名称"),
     subject: requiredSubject(input.subject),
     description: text(input.description, 10000, "任务说明"),
+    studyPlanId: studyPlanId(input.studyPlanId),
   };
 }
 export function parseTaskUpdate(value: unknown): TaskUpdate {
@@ -48,6 +59,7 @@ export function parseTaskUpdate(value: unknown): TaskUpdate {
     "description",
     "status",
     "expectedVersion",
+    "studyPlanId",
   ]);
   return {
     ...parseTaskWrite({
@@ -58,6 +70,7 @@ export function parseTaskUpdate(value: unknown): TaskUpdate {
     id: positiveId(input.id),
     status: status(input.status),
     expectedVersion: uint(input.expectedVersion, "版本号", true),
+    studyPlanId: studyPlanId(input.studyPlanId),
   };
 }
 export function parseTaskStatus(value: unknown): TaskStatusWrite {

@@ -10,6 +10,7 @@ const api = vi.hoisted(() => ({
   updateTask: vi.fn(),
   setTaskStatus: vi.fn(),
   loadTaskSubjects: vi.fn(),
+  loadTaskPlans: vi.fn(),
 }));
 vi.mock("~/services/tasks", () => api);
 vi.mock("./../../app/composables/useTaskInvalidation", () => ({
@@ -26,6 +27,7 @@ const task: TaskDefinition = {
   assignmentCount: 0,
   createdAt: "2000-01-01T00:00:00Z",
   updatedAt: "2000-01-01T00:00:00Z",
+  studyPlan: null,
 };
 const flush = async () => {
   await Promise.resolve();
@@ -101,6 +103,7 @@ describe("S5 task UI state", () => {
       title: "t",
       subject: "s",
       description: "d",
+      studyPlanId: null,
     });
     reject(new ServiceError("操作人无效", 503));
     await pending;

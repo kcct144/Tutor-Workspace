@@ -1,3 +1,5 @@
+import type { PlanTag } from "./study-plans";
+
 export type AssignmentStatus = "pending" | "completed";
 export type DueState = "overdue" | "today" | "upcoming";
 export interface AssignmentQuery {
@@ -14,6 +16,11 @@ export interface AssignmentBatch {
   taskId: string;
   studentIds: string[];
   dueDate: string;
+}
+export interface AssignmentBatchResult {
+  assignmentIds: string[];
+  createdCount: number;
+  planSnapshot: PlanTag | null;
 }
 export interface AssignmentCompletion {
   id: string;
@@ -36,4 +43,5 @@ export interface TaskAssignment {
   createdAt: string;
   updatedAt: string;
   version: number;
+  planSnapshot: PlanTag | null;
 }

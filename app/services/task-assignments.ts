@@ -4,6 +4,7 @@ import type {
   AssignmentQuery,
   AssignmentBatch,
   AssignmentCompletion,
+  AssignmentBatchResult,
   TaskAssignment,
 } from "../../types/api/task-assignments";
 import type { HomeQuery, HomePage } from "../../types/api/home";
@@ -16,7 +17,7 @@ export const getAssignments = (query: AssignmentQuery, signal?: AbortSignal) =>
     signal,
   );
 export const createAssignments = (input: AssignmentBatch) =>
-  apiWrite<{ assignmentIds: string[]; createdCount: number }>(
+  apiWrite<AssignmentBatchResult>(
     "/api/task-assignments/create-batch",
     "POST",
     input,

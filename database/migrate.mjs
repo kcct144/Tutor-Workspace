@@ -15,6 +15,7 @@ import {
   parseAttendanceRecordsMigration,
   parseAuditAttendanceRecordMigration,
   parseExpandedStudentGradesMigration,
+  parseTaskPlanProgressMigration,
 } from "../server/db/safety.ts";
 import { checkStudentVersion } from "./student-version.mjs";
 
@@ -78,6 +79,7 @@ const manifest = [
   },
   { version: "016_audit_attendance_record", tables: [], references: [] },
   { version: "017_expand_student_grades", tables: [], references: [] },
+  { version: "018_task_plan_progress", tables: [], references: [] },
 ];
 
 function parseApprovedMigration(version, sql, tables, references) {
@@ -100,6 +102,8 @@ function parseApprovedMigration(version, sql, tables, references) {
     return parseAuditAttendanceRecordMigration(sql);
   if (version === "017_expand_student_grades")
     return parseExpandedStudentGradesMigration(sql);
+  if (version === "018_task_plan_progress")
+    return parseTaskPlanProgressMigration(sql);
   return parseMigration(sql, tables, references);
 }
 
@@ -304,6 +308,52 @@ async function checkExpandedStudentGradesStructure(connection, applied) {
     throw new Error("学生年级约束不符合批准定义。");
   return false;
 }
+async function checkTaskPlanProgressStructure(connection, applied) {
+  await assertApprovedDatabase(connection);
+  const [columns] = await connection.execute(
+    "SELECT TABLE_NAME,COLUMN_NAME,IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND ((TABLE_NAME='tasks' AND COLUMN_NAME='study_plan_id') OR (TABLE_NAME='task_assignments' AND COLUMN_NAME='study_plan_id_snapshot')) ORDER BY TABLE_NAME,COLUMN_NAME LIMIT 2",
+  );
+  const [indexes] = await connection.execute(
+    "SELECT TABLE_NAME,INDEX_NAME,SEQ_IN_INDEX,COLUMN_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND ((TABLE_NAME='tasks' AND INDEX_NAME='idx_tasks_study_plan_status_updated') OR (TABLE_NAME='task_assignments' AND INDEX_NAME='idx_assignments_plan_student_status')) ORDER BY TABLE_NAME,INDEX_NAME,SEQ_IN_INDEX LIMIT 8",
+  );
+  const [foreignKeys] = await connection.execute(
+    "SELECT TABLE_NAME,CONSTRAINT_NAME,REFERENCED_TABLE_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=DATABASE() AND CONSTRAINT_NAME IN ('fk_tasks_study_plan','fk_assignments_study_plan_snapshot') ORDER BY CONSTRAINT_NAME LIMIT 2",
+  );
+  const expectedIndexes = new Map([
+    [
+      "task_assignments:idx_assignments_plan_student_status",
+      "study_plan_id_snapshot,student_id,status,id",
+    ],
+    [
+      "tasks:idx_tasks_study_plan_status_updated",
+      "study_plan_id,status,updated_at,id",
+    ],
+  ]);
+  const actualIndexes = new Map();
+  for (const row of indexes) {
+    const key = String(row.TABLE_NAME) + ":" + String(row.INDEX_NAME);
+    actualIndexes.set(
+      key,
+      (actualIndexes.get(key) ?? []).concat(String(row.COLUMN_NAME)),
+    );
+  }
+  const complete =
+    columns.length === 2 &&
+    columns.every((row) => row.IS_NULLABLE === "YES") &&
+    [...expectedIndexes].every(
+      ([key, value]) => (actualIndexes.get(key) ?? []).join(",") === value,
+    ) &&
+    foreignKeys.length === 2 &&
+    foreignKeys.every(
+      (row) => row.REFERENCED_TABLE_NAME === "study_plan_documents",
+    );
+  if (!applied) {
+    if (columns.length || indexes.length || foreignKeys.length)
+      throw new Error("发现未登记的任务计划关联DDL，停止人工核对。");
+    return;
+  }
+  if (!complete) throw new Error("任务计划关联结构不符合批准定义。");
+}
 await runDatabaseCommand(async (connection) => {
   const [versionRows] = await connection.query("SELECT VERSION() AS version");
   const match = /^(\d+)\.(\d+)\.(\d+)/.exec(versionRows[0].version);
@@ -380,6 +430,8 @@ await runDatabaseCommand(async (connection) => {
             await checkAttendanceAuditStructure(connection, true);
           if (migration.version === "017_expand_student_grades")
             await checkExpandedStudentGradesStructure(connection, true);
+          if (migration.version === "018_task_plan_progress")
+            await checkTaskPlanProgressStructure(connection, true);
           console.log(migration.version + " 已应用，跳过。");
           continue;
         }
@@ -421,6 +473,8 @@ await runDatabaseCommand(async (connection) => {
         await checkAttendanceAuditStructure(connection, false);
       if (migration.version === "017_expand_student_grades")
         await checkExpandedStudentGradesStructure(connection, false);
+      if (migration.version === "018_task_plan_progress")
+        await checkTaskPlanProgressStructure(connection, false);
       for (const statement of migration.statements) {
         await assertApprovedDatabase(connection);
         await connection.query(statement);
@@ -443,6 +497,8 @@ await runDatabaseCommand(async (connection) => {
         await checkAttendanceAuditStructure(connection, true);
       if (migration.version === "017_expand_student_grades")
         await checkExpandedStudentGradesStructure(connection, true);
+      if (migration.version === "018_task_plan_progress")
+        await checkTaskPlanProgressStructure(connection, true);
       await assertApprovedDatabase(connection);
       await connection.execute(
         "INSERT INTO schema_migrations (version, checksum) VALUES (?, ?)",

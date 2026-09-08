@@ -9,6 +9,7 @@ import type {
   TaskOption,
 } from "../../types/api/tasks";
 import type { OptionLoader } from "./contracts";
+import { getPlanOptions } from "./study-plans";
 export const getTasks = (query: TaskQuery, signal?: AbortSignal) =>
   apiGet<Page<TaskDefinition>>("/api/tasks/list", { ...query }, signal);
 export const getTask = (id: string, signal?: AbortSignal) =>
@@ -35,5 +36,12 @@ export const loadTaskSubjects: OptionLoader = async (query, signal) => {
       value: item.value,
       label: item.value,
     })),
+  };
+};
+export const loadTaskPlans: OptionLoader = async (query, signal) => {
+  const result = await getPlanOptions(query, signal);
+  return {
+    ...result,
+    items: result.items.map((item) => ({ value: item.id, label: item.title })),
   };
 };

@@ -2,6 +2,7 @@ import { ref, computed, watch, onMounted, onScopeDispose } from "vue";
 import type { PlanDetail, PlanListItem } from "../../types/api/study-plans";
 import { getPlans, getPlan, updatePlan } from "~/services/study-plans";
 import { ServiceError } from "~/services/http";
+import { useTaskInvalidation } from "./useTaskInvalidation";
 export function useStudyPlans(initialId: () => string = () => "") {
   const items = ref<PlanListItem[]>([]),
     total = ref(0),
@@ -174,6 +175,10 @@ export function useStudyPlans(initialId: () => string = () => "") {
     },
     { immediate: true },
   );
+  useTaskInvalidation(async () => {
+    await refreshList();
+    if (selectedId.value && !saving.value) await loadDetail(selectedId.value);
+  });
   function beforeUnload(event: BeforeUnloadEvent) {
     if (dirty.value || saving.value) {
       event.preventDefault();

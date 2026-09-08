@@ -6,6 +6,7 @@ import {
   updateTask,
   setTaskStatus,
   loadTaskSubjects,
+  loadTaskPlans,
 } from "~/services/tasks";
 import { ServiceError } from "~/services/http";
 import { useTaskInvalidation, notifyTaskChange } from "./useTaskInvalidation";
@@ -20,6 +21,7 @@ const emptyForm = (): TaskWrite & { status: TaskStatus } => ({
   subject: "",
   description: "",
   status: "enabled",
+  studyPlanId: undefined,
 });
 const message = (cause: unknown, fallback: string) =>
   cause instanceof ServiceError ? cause.message : fallback;
@@ -115,6 +117,7 @@ export function useTasks() {
           subject: task.subject,
           description: task.description,
           status: task.status,
+          studyPlanId: task.studyPlan?.id,
         };
       }
     } catch (cause) {
@@ -160,6 +163,7 @@ export function useTasks() {
       title: form.value.title,
       subject: form.value.subject,
       description: form.value.description,
+      studyPlanId: form.value.studyPlanId ?? null,
     };
     try {
       if (editingId.value) {
@@ -240,5 +244,6 @@ export function useTasks() {
     save,
     changeStatus,
     loadTaskSubjects,
+    loadTaskPlans,
   };
 }

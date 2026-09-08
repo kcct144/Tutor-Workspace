@@ -49,6 +49,10 @@ const { student, loading, error, notFound, refresh } = useStudentDetail(() =>
         />
         <div class="detail-main">
           <LearningRecordsSection :key="student.id" :student-id="student.id" />
+          <PlanProgressSection
+            :key="'plan-progress-' + student.id"
+            :student-id="student.id"
+          />
           <ScoreRecordsSection
             :key="'scores-' + student.id"
             :student-id="student.id"

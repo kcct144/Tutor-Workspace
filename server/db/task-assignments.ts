@@ -8,6 +8,7 @@ import type {
 } from "../../types/api/task-assignments.ts";
 import { ApiError } from "../utils/api.ts";
 import { executeWrite } from "./write.ts";
+import { writeAuditLog } from "./audit.ts";
 import { likeValue } from "./contracts.ts";
 import { shanghaiToday } from "./contracts-rules.ts";
 import { assignmentDueState } from "./assignment-rules.ts";
@@ -26,12 +27,14 @@ interface AssignmentRow extends RowDataPacket {
   created_at: string;
   updated_at: string;
   version: number;
+  study_plan_id_snapshot: string | null;
+  study_plan_title: string | null;
   group_count?: number;
 }
 const columns =
-  "a.id,a.task_id,a.student_id,t.title AS task_title,t.description,t.subject,s.name AS student_name,a.status,a.assigned_at,a.due_date,a.completed_at,a.created_at,a.updated_at,a.version";
+  "a.id,a.task_id,a.student_id,a.study_plan_id_snapshot,t.title AS task_title,t.description,t.subject,s.name AS student_name,p.title AS study_plan_title,a.status,a.assigned_at,a.due_date,a.completed_at,a.created_at,a.updated_at,a.version";
 const joins =
-  " FROM task_assignments a JOIN tasks t ON t.id=a.task_id JOIN students s ON s.id=a.student_id";
+  " FROM task_assignments a JOIN tasks t ON t.id=a.task_id JOIN students s ON s.id=a.student_id LEFT JOIN study_plan_documents p ON p.id=a.study_plan_id_snapshot";
 const time = (value: string) => value.replace(" ", "T") + "Z";
 export function projectAssignment(
   row: AssignmentRow,
@@ -52,6 +55,12 @@ export function projectAssignment(
     createdAt: time(row.created_at),
     updatedAt: time(row.updated_at),
     version: row.version,
+    planSnapshot: row.study_plan_id_snapshot
+      ? {
+          id: String(row.study_plan_id_snapshot),
+          title: row.study_plan_title ?? "",
+        }
+      : null,
     dueState: assignmentDueState(row.status, row.due_date, today),
   };
 }
@@ -149,6 +158,13 @@ export async function listAssignments(
 function conflict(message: string): never {
   throw new ApiError(409, "ASSIGNMENT_CONFLICT", message);
 }
+function planNotLinked(): never {
+  throw new ApiError(
+    409,
+    "STUDENT_PLAN_NOT_LINKED",
+    "所选学生未关联该学习计划，请调整学生或先建立计划关联。",
+  );
+}
 function duplicate(error: unknown) {
   return (
     !!error &&
@@ -163,7 +179,7 @@ export async function createAssignmentBatch(
   actor: string,
 ) {
   const [tasks] = await db.execute<RowDataPacket[]>(
-    "SELECT id,status FROM tasks WHERE id=? LIMIT 1 FOR UPDATE",
+    "SELECT t.id,t.status,t.study_plan_id,p.title AS study_plan_title FROM tasks t LEFT JOIN study_plan_documents p ON p.id=t.study_plan_id WHERE t.id=? LIMIT 1 FOR UPDATE",
     [input.taskId],
   );
   if (!tasks[0]) throw new ApiError(404, "NOT_FOUND", "未找到任务定义。");
@@ -177,6 +193,16 @@ export async function createAssignmentBatch(
   );
   if (students.length !== input.studentIds.length)
     throw new ApiError(404, "NOT_FOUND", "存在未找到的学生，整批未创建。");
+  const studyPlanId = tasks[0].study_plan_id as string | null;
+  if (studyPlanId) {
+    const [linked] = await db.execute<RowDataPacket[]>(
+      "SELECT student_id FROM study_plan_students WHERE plan_id=? AND student_id IN (" +
+        slots +
+        ") ORDER BY student_id LIMIT ? FOR SHARE",
+      [studyPlanId, ...input.studentIds, input.studentIds.length],
+    );
+    if (linked.length !== input.studentIds.length) planNotLinked();
+  }
   const [pending] = await db.execute<RowDataPacket[]>(
     "SELECT id FROM task_assignments WHERE task_id=? AND student_id IN (" +
       slots +
@@ -188,11 +214,12 @@ export async function createAssignmentBatch(
   try {
     await executeWrite(
       db,
-      "INSERT INTO task_assignments (task_id,student_id,assigned_by,due_date) VALUES " +
-        input.studentIds.map(() => "(?,?,?,?)").join(","),
+      "INSERT INTO task_assignments (task_id,student_id,study_plan_id_snapshot,assigned_by,due_date) VALUES " +
+        input.studentIds.map(() => "(?,?,?,?,?)").join(","),
       input.studentIds.flatMap((id) => [
         input.taskId,
         id,
+        studyPlanId,
         actor,
         input.dueDate,
       ]),
@@ -207,14 +234,43 @@ export async function createAssignmentBatch(
       ") AND pending_marker=1 ORDER BY id LIMIT ? FOR UPDATE",
     [input.taskId, ...input.studentIds, input.studentIds.length],
   );
+  if (created.length !== input.studentIds.length)
+    throw new Error("任务分配回读不完整。");
+  const [auditRows] = await db.execute<RowDataPacket[]>(
+    "SELECT id,student_id,status,due_date,study_plan_id_snapshot FROM task_assignments WHERE id IN (" +
+      created.map(() => "?").join(",") +
+      ") ORDER BY id LIMIT ?",
+    [...created.map((row) => String(row.id)), created.length],
+  );
+  for (const row of auditRows) {
+    await writeAuditLog(db, {
+      actorUserId: actor,
+      action: "task_assignment.create",
+      entityType: "task_assignment",
+      entityId: String(row.id),
+      studentId: String(row.student_id),
+      after: {
+        taskId: input.taskId,
+        dueDate: String(row.due_date),
+        status: String(row.status),
+        studyPlanId: row.study_plan_id_snapshot
+          ? String(row.study_plan_id_snapshot)
+          : null,
+      },
+    });
+  }
   return {
     assignmentIds: created.map((row) => String(row.id)),
     createdCount: created.length,
+    planSnapshot: studyPlanId
+      ? { id: studyPlanId, title: String(tasks[0].study_plan_title ?? "") }
+      : null,
   };
 }
 export async function completeAssignment(
   db: Connection,
   input: AssignmentCompletion,
+  actor: string,
   today = shanghaiToday(),
 ) {
   const status = input.completed ? "completed" : "pending";
@@ -240,8 +296,18 @@ export async function completeAssignment(
     changed &&
     current.version === input.expectedVersion + 1 &&
     current.status === status
-  )
+  ) {
+    await writeAuditLog(db, {
+      actorUserId: actor,
+      action: "task_assignment.completion",
+      entityType: "task_assignment",
+      entityId: current.id,
+      studentId: current.studentId,
+      before: { status: input.completed ? "pending" : "completed" },
+      after: { status: current.status },
+    });
     return current;
+  }
   conflict("任务分配版本已变化，请刷新后重试。");
 }
 export async function taskAssignmentCounts(db: Connection, ids: string[]) {

@@ -1,8 +1,18 @@
 <script setup lang="ts">
 import { loadAssignmentTasks } from "~/services/task-assignments";
 import { loadStudentOptions } from "~/services/contracts";
-const { open, saving, error, notice, form, start, close, save } =
-  useAssignmentCreate();
+const {
+  open,
+  saving,
+  error,
+  notice,
+  form,
+  selectedPlanName,
+  taskLookupError,
+  start,
+  close,
+  save,
+} = useAssignmentCreate();
 </script>
 <template>
   <div>
@@ -35,6 +45,22 @@ const { open, saving, error, notice, form, start, close, save } =
             placeholder="选择启用中的任务"
             aria-label="分配任务"
         /></label>
+        <AAlert
+          v-if="taskLookupError"
+          type="error"
+          show-icon
+          :message="taskLookupError"
+        />
+        <AAlert
+          v-else-if="form.taskId"
+          type="info"
+          show-icon
+          :message="
+            selectedPlanName
+              ? `须关联学习计划：${selectedPlanName}。所选全部学生均须关联该计划。`
+              : '该任务未关联学习计划，无需额外计划校验。'
+          "
+        />
         <label
           >学生<RemoteMultiSelect
             v-model="form.studentIds"
