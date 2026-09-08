@@ -43,6 +43,22 @@ export function parseLearningRecordSubjectMigration(sql: string): string[] {
   );
 }
 
+/** S9 permits one additive, standalone score-record table. */
+export function parseScoreRecordsMigration(sql: string): string[] {
+  return parseMigration(sql, ["score_records"], ["students", "users"]);
+}
+
+/** S9 extends only the existing audit entity CHECK for score-record writes. */
+export function parseAuditScoreRecordMigration(sql: string): string[] {
+  return parseExactMigration(
+    sql,
+    [
+      "ALTER TABLE audit_logs DROP CHECK chk_audit_logs_entity_type, ADD CONSTRAINT chk_audit_logs_entity_type CHECK (entity_type IN ('student', 'contract', 'learning_record', 'score_record', 'task', 'task_assignment', 'user_account'))",
+    ],
+    "迁移超出已批准的成绩审计实体范围。",
+  );
+}
+
 function parseExactMigration(
   sql: string,
   expectedStatements: readonly string[],

@@ -10,6 +10,8 @@ import {
   parseStudentVersionMigration,
   parseExperienceStudentTrialMigration,
   parseLearningRecordSubjectMigration,
+  parseScoreRecordsMigration,
+  parseAuditScoreRecordMigration,
 } from "../server/db/safety.ts";
 import { checkStudentVersion } from "./student-version.mjs";
 
@@ -60,6 +62,12 @@ const manifest = [
     references: [],
   },
   { version: "012_learning_record_subject", tables: [], references: [] },
+  {
+    version: "013_score_records",
+    tables: ["score_records"],
+    references: ["students", "users"],
+  },
+  { version: "014_audit_score_record", tables: [], references: [] },
 ];
 
 function parseApprovedMigration(version, sql, tables, references) {
@@ -73,6 +81,9 @@ function parseApprovedMigration(version, sql, tables, references) {
     return parseExperienceStudentTrialMigration(sql);
   if (version === "012_learning_record_subject")
     return parseLearningRecordSubjectMigration(sql);
+  if (version === "013_score_records") return parseScoreRecordsMigration(sql);
+  if (version === "014_audit_score_record")
+    return parseAuditScoreRecordMigration(sql);
   return parseMigration(sql, tables, references);
 }
 
@@ -158,6 +169,59 @@ async function checkLearningRecordSubjectStructure(connection, applied) {
   )
     throw new Error("学习记录科目结构不符合批准定义。");
 }
+async function checkScoreRecordsStructure(connection, applied) {
+  await assertApprovedDatabase(connection);
+  const [columns] = await connection.execute(
+    "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? ORDER BY ORDINAL_POSITION LIMIT 20",
+    ["score_records"],
+  );
+  const [indexes] = await connection.execute(
+    "SELECT DISTINCT INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? ORDER BY INDEX_NAME LIMIT 10",
+    ["score_records"],
+  );
+  const names = new Set(columns.map((row) => String(row.COLUMN_NAME)));
+  const indexNames = new Set(indexes.map((row) => String(row.INDEX_NAME)));
+  const expected = [
+    "id",
+    "student_id",
+    "exam_date",
+    "subject",
+    "record_type",
+    "exam_name",
+    "score",
+    "full_score",
+    "created_by",
+    "updated_by",
+    "version",
+    "created_at",
+    "updated_at",
+  ];
+  if (!applied) {
+    if (columns.length || indexes.length)
+      throw new Error("发现未登记的成绩记录DDL，停止人工核对。");
+    return;
+  }
+  if (
+    expected.some((column) => !names.has(column)) ||
+    !indexNames.has("idx_score_records_student_date") ||
+    !indexNames.has("idx_score_records_student_subject_date") ||
+    !indexNames.has("idx_score_records_subject_type_date") ||
+    !indexNames.has("idx_score_records_updated")
+  )
+    throw new Error("成绩记录结构不符合批准定义。");
+}
+async function checkScoreRecordAuditStructure(connection, applied) {
+  await assertApprovedDatabase(connection);
+  const [rows] = await connection.execute(
+    "SELECT CHECK_CLAUSE FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() AND CONSTRAINT_NAME=? LIMIT 1",
+    ["chk_audit_logs_entity_type"],
+  );
+  const clause = String(rows[0]?.CHECK_CLAUSE ?? "");
+  if (!rows.length || (applied && !clause.includes("score_record")))
+    throw new Error("成绩审计对象约束不符合批准定义。");
+  if (!applied && clause.includes("score_record"))
+    throw new Error("发现未登记的成绩审计DDL，停止人工核对。");
+}
 await runDatabaseCommand(async (connection) => {
   const [versionRows] = await connection.query("SELECT VERSION() AS version");
   const match = /^(\d+)\.(\d+)\.(\d+)/.exec(versionRows[0].version);
@@ -224,6 +288,10 @@ await runDatabaseCommand(async (connection) => {
             await checkExperienceTrialStructure(connection, true);
           if (migration.version === "012_learning_record_subject")
             await checkLearningRecordSubjectStructure(connection, true);
+          if (migration.version === "013_score_records")
+            await checkScoreRecordsStructure(connection, true);
+          if (migration.version === "014_audit_score_record")
+            await checkScoreRecordAuditStructure(connection, true);
           console.log(migration.version + " 已应用，跳过。");
           continue;
         }
@@ -242,6 +310,10 @@ await runDatabaseCommand(async (connection) => {
         await checkExperienceTrialStructure(connection, false);
       if (migration.version === "012_learning_record_subject")
         await checkLearningRecordSubjectStructure(connection, false);
+      if (migration.version === "013_score_records")
+        await checkScoreRecordsStructure(connection, false);
+      if (migration.version === "014_audit_score_record")
+        await checkScoreRecordAuditStructure(connection, false);
       for (const statement of migration.statements) {
         await assertApprovedDatabase(connection);
         await connection.query(statement);
@@ -254,6 +326,10 @@ await runDatabaseCommand(async (connection) => {
         await checkExperienceTrialStructure(connection, true);
       if (migration.version === "012_learning_record_subject")
         await checkLearningRecordSubjectStructure(connection, true);
+      if (migration.version === "013_score_records")
+        await checkScoreRecordsStructure(connection, true);
+      if (migration.version === "014_audit_score_record")
+        await checkScoreRecordAuditStructure(connection, true);
       await assertApprovedDatabase(connection);
       await connection.execute(
         "INSERT INTO schema_migrations (version, checksum) VALUES (?, ?)",

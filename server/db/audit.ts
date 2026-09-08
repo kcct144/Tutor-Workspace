@@ -7,6 +7,7 @@ export const auditEntityTypes = [
   "student",
   "contract",
   "learning_record",
+  "score_record",
   "task",
   "task_assignment",
   "user_account",
