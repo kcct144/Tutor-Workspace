@@ -7,6 +7,7 @@ import {
   shanghaiToday,
 } from "../../server/db/contracts-rules";
 import {
+  parseExpandedStudentGradesMigration,
   parseExperienceStudentTrialMigration,
   parseMigration,
   parseS1Migration,
@@ -173,6 +174,19 @@ describe("S2 contracts", () => {
       parseExperienceStudentTrialMigration(
         "ALTER TABLE students DROP COLUMN grade",
       ),
+    ).toThrow();
+  });
+  it("accepts only the approved expanded student-grade migration", () => {
+    const sql = readFileSync(
+      new URL(
+        "../../database/migrations/017_expand_student_grades.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(parseExpandedStudentGradesMigration(sql)).toHaveLength(1);
+    expect(() =>
+      parseExpandedStudentGradesMigration(sql.replace("高三", "大学一年级")),
     ).toThrow();
   });
 });

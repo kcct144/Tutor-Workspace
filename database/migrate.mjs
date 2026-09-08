@@ -14,6 +14,7 @@ import {
   parseAuditScoreRecordMigration,
   parseAttendanceRecordsMigration,
   parseAuditAttendanceRecordMigration,
+  parseExpandedStudentGradesMigration,
 } from "../server/db/safety.ts";
 import { checkStudentVersion } from "./student-version.mjs";
 
@@ -76,6 +77,7 @@ const manifest = [
     references: ["students", "users"],
   },
   { version: "016_audit_attendance_record", tables: [], references: [] },
+  { version: "017_expand_student_grades", tables: [], references: [] },
 ];
 
 function parseApprovedMigration(version, sql, tables, references) {
@@ -96,6 +98,8 @@ function parseApprovedMigration(version, sql, tables, references) {
     return parseAttendanceRecordsMigration(sql);
   if (version === "016_audit_attendance_record")
     return parseAuditAttendanceRecordMigration(sql);
+  if (version === "017_expand_student_grades")
+    return parseExpandedStudentGradesMigration(sql);
   return parseMigration(sql, tables, references);
 }
 
@@ -284,6 +288,22 @@ async function checkAttendanceAuditStructure(connection, applied) {
   if (!applied && clause.includes("attendance_record"))
     throw new Error("发现未登记的出勤审计DDL，停止人工核对。");
 }
+async function checkExpandedStudentGradesStructure(connection, applied) {
+  await assertApprovedDatabase(connection);
+  const [rows] = await connection.execute(
+    "SELECT LENGTH(CHECK_CLAUSE)-LENGTH(REPLACE(CHECK_CLAUSE, ',', '')) AS grade_separator_count FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() AND CONSTRAINT_NAME=? LIMIT 1",
+    ["chk_students_grade"],
+  );
+  const separatorCount = Number(rows[0]?.grade_separator_count ?? -1);
+  if (!applied) {
+    if (separatorCount === 4) return false;
+    if (separatorCount === 9) return true;
+    throw new Error("发现未登记的学生年级DDL，停止人工核对。");
+  }
+  if (!rows.length || separatorCount !== 9)
+    throw new Error("学生年级约束不符合批准定义。");
+  return false;
+}
 await runDatabaseCommand(async (connection) => {
   const [versionRows] = await connection.query("SELECT VERSION() AS version");
   const match = /^(\d+)\.(\d+)\.(\d+)/.exec(versionRows[0].version);
@@ -358,6 +378,8 @@ await runDatabaseCommand(async (connection) => {
             await checkAttendanceRecordsStructure(connection, true);
           if (migration.version === "016_audit_attendance_record")
             await checkAttendanceAuditStructure(connection, true);
+          if (migration.version === "017_expand_student_grades")
+            await checkExpandedStudentGradesStructure(connection, true);
           console.log(migration.version + " 已应用，跳过。");
           continue;
         }
@@ -366,6 +388,19 @@ await runDatabaseCommand(async (connection) => {
             "检测到未完成或未登记的DDL，需人工核对；不会自动覆盖或删除。",
           );
           throw new Error("Partial migration");
+        }
+        if (migration.version === "017_expand_student_grades") {
+          const structureAlreadyApplied =
+            await checkExpandedStudentGradesStructure(connection, false);
+          if (structureAlreadyApplied) {
+            await assertApprovedDatabase(connection);
+            await connection.execute(
+              "INSERT INTO schema_migrations (version, checksum) VALUES (?, ?)",
+              [migration.version, migration.checksum],
+            );
+            console.log(migration.version + " 已核对既有结构并登记，跳过DDL。");
+            continue;
+          }
         }
       }
       if (migration.version === "007_students_version")
@@ -384,6 +419,8 @@ await runDatabaseCommand(async (connection) => {
         await checkAttendanceRecordsStructure(connection, false);
       if (migration.version === "016_audit_attendance_record")
         await checkAttendanceAuditStructure(connection, false);
+      if (migration.version === "017_expand_student_grades")
+        await checkExpandedStudentGradesStructure(connection, false);
       for (const statement of migration.statements) {
         await assertApprovedDatabase(connection);
         await connection.query(statement);
@@ -404,6 +441,8 @@ await runDatabaseCommand(async (connection) => {
         await checkAttendanceRecordsStructure(connection, true);
       if (migration.version === "016_audit_attendance_record")
         await checkAttendanceAuditStructure(connection, true);
+      if (migration.version === "017_expand_student_grades")
+        await checkExpandedStudentGradesStructure(connection, true);
       await assertApprovedDatabase(connection);
       await connection.execute(
         "INSERT INTO schema_migrations (version, checksum) VALUES (?, ?)",

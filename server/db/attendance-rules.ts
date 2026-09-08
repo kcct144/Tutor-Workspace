@@ -6,7 +6,11 @@ import {
   type AttendanceRosterQuery,
   type AttendanceStatus,
 } from "../../types/api/attendance.ts";
-import type { StudentGrade, StudentStatus } from "../../types/api/students.ts";
+import {
+  studentGrades,
+  type StudentGrade,
+  type StudentStatus,
+} from "../../types/api/students.ts";
 import {
   dateOnly,
   positiveId,
@@ -61,10 +65,7 @@ export function parseAttendanceMonthQuery(
   const gender = input.gender === undefined ? undefined : text(input.gender, 2);
   const studentStatus =
     input.status === undefined ? undefined : text(input.status, 16);
-  if (
-    grade !== undefined &&
-    !["初一", "初二", "初三", "高一", "高二"].includes(grade)
-  )
+  if (grade !== undefined && !studentGrades.includes(grade as StudentGrade))
     invalid("年级筛选无效。");
   if (gender !== undefined && gender !== "男" && gender !== "女")
     invalid("性别筛选无效。");

@@ -237,6 +237,9 @@ describe("S10 attendance validation", () => {
     expect(
       parseAttendanceSummaryQuery({ month: "2026-09", period: "all" }),
     ).toMatchObject({ month: "2026-09", period: "all" });
+    expect(
+      parseAttendanceMonthQuery({ month: "2026-09", grade: "三年级" }).grade,
+    ).toBe("三年级");
     for (const query of [
       { month: "2026-13" },
       { month: "2026-09", grade: "九年级" },

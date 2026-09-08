@@ -10,23 +10,23 @@
 
 学生表使用 InnoDB、utf8mb4，BIGINT UNSIGNED 主键，API 以十进制 string 传输；日期为 DATE，时间为 UTC `DATETIME(3)`。不存在软删除字段、删除接口或级联删除；所有外键采用 `ON DELETE/UPDATE RESTRICT`。
 
-| 字段           | 类型与约束                                  | 档案维护说明                               |
-| -------------- | ------------------------------------------- | ------------------------------------------ |
-| id             | BIGINT UNSIGNED，自增 PK                    | 服务端生成，只读                           |
-| owner_user_id  | BIGINT UNSIGNED NULL，FK users.id，RESTRICT | 当前负责人，只读；新增为空                 |
-| name           | VARCHAR(64) NOT NULL                        | trim 后 1–64 个 Unicode 字符               |
-| grade          | VARCHAR(16) NULL                            | 可空；非空时仅初一、初二、初三、高一、高二 |
-| class_name     | VARCHAR(32) NULL                            | 可空                                       |
-| school         | VARCHAR(128) NULL                           | 可空                                       |
-| gender         | VARCHAR(8) NULL                             | 非空时仅男/女                              |
-| enrolled_at    | DATE NULL                                   | 可空；服务端校验合法日期                   |
-| guardian_name  | VARCHAR(64) NULL                            | 可空                                       |
-| guardian_phone | VARCHAR(32) NULL                            | 可空；服务端校验格式，原值保存             |
-| note           | VARCHAR(500) NULL                           | 可空                                       |
-| status         | VARCHAR(16) NOT NULL                        | 仅在读、待分配、已结课                     |
-| created_at     | DATETIME(3) NOT NULL                        | 服务端生成，只读                           |
-| updated_at     | DATETIME(3) NOT NULL                        | 每次成功档案/状态修改更新                  |
-| version        | INT UNSIGNED NOT NULL DEFAULT 1，CHECK > 0  | 乐观锁版本，新增/更新/状态更新返回         |
+| 字段           | 类型与约束                                  | 档案维护说明                                                                     |
+| -------------- | ------------------------------------------- | -------------------------------------------------------------------------------- |
+| id             | BIGINT UNSIGNED，自增 PK                    | 服务端生成，只读                                                                 |
+| owner_user_id  | BIGINT UNSIGNED NULL，FK users.id，RESTRICT | 当前负责人，只读；新增为空                                                       |
+| name           | VARCHAR(64) NOT NULL                        | trim 后 1–64 个 Unicode 字符                                                     |
+| grade          | VARCHAR(16) NULL                            | 可空；非空时仅三年级、四年级、五年级、六年级、初一、初二、初三、高一、高二、高三 |
+| class_name     | VARCHAR(32) NULL                            | 可空                                                                             |
+| school         | VARCHAR(128) NULL                           | 可空                                                                             |
+| gender         | VARCHAR(8) NULL                             | 非空时仅男/女                                                                    |
+| enrolled_at    | DATE NULL                                   | 可空；服务端校验合法日期                                                         |
+| guardian_name  | VARCHAR(64) NULL                            | 可空                                                                             |
+| guardian_phone | VARCHAR(32) NULL                            | 可空；服务端校验格式，原值保存                                                   |
+| note           | VARCHAR(500) NULL                           | 可空                                                                             |
+| status         | VARCHAR(16) NOT NULL                        | 仅在读、待分配、已结课                                                           |
+| created_at     | DATETIME(3) NOT NULL                        | 服务端生成，只读                                                                 |
+| updated_at     | DATETIME(3) NOT NULL                        | 每次成功档案/状态修改更新                                                        |
+| version        | INT UNSIGNED NOT NULL DEFAULT 1，CHECK > 0  | 乐观锁版本，新增/更新/状态更新返回                                               |
 
 现有索引 `(grade,status,id)`、`(owner_user_id,id)` 和主键继续保留。姓名、学校、班级和联系方式不建立唯一约束，允许同名学生、兄弟姐妹和转学生共存。新增 `version` 不改变外键关系，也不新增 owner 或审计字段。
 
@@ -141,4 +141,4 @@ S7 批准使用 `version`，新增迁移文件 `database/migrations/007_students
 ## 2026-09-07 已确认：体验学生资料
 
 - 学生姓名是唯一必填字段；年级、学校、班级、性别、入学日期、监护人姓名、联系方式和备注均可省略或明确清空。年级未知以 `NULL` 表示，页面显示“年级待确认”，不另建“未知”枚举。
-- `011_experience_students_trial_contracts.sql` 只将 `students.grade` 调整为可空并收紧其非空值检查；不变更任何既有学生值、关联关系或负责人。
+- `011_experience_students_trial_contracts.sql` 将 `students.grade` 调整为可空；`017_expand_student_grades.sql` 将非空年级扩展至三年级至高三。两项迁移均不变更既有学生值、关联关系或负责人。

@@ -1,4 +1,15 @@
-export const studentGrades = ["初一", "初二", "初三", "高一", "高二"] as const;
+export const studentGrades = [
+  "三年级",
+  "四年级",
+  "五年级",
+  "六年级",
+  "初一",
+  "初二",
+  "初三",
+  "高一",
+  "高二",
+  "高三",
+] as const;
 export const studentStatuses = ["在读", "待分配", "已结课"] as const;
 export type StudentGrade = (typeof studentGrades)[number];
 export type StudentStatus = (typeof studentStatuses)[number];

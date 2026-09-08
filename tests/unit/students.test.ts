@@ -111,6 +111,8 @@ describe("student query and projection", () => {
       parseStudentQuery({ pageSize: "100", grade: "初一", status: "在读" })
         .pageSize,
     ).toBe(100);
+    for (const grade of ["三年级", "高三"])
+      expect(parseStudentQuery({ grade }).grade).toBe(grade);
     for (const query of [
       { page: "0" },
       { page: "1.5" },

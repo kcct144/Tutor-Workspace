@@ -9,8 +9,8 @@ import {
   maskGuardianPhone,
 } from "../../server/db/student-profile-rules";
 import {
-  parseStudentVersionMigration,
   parseMigration,
+  parseStudentVersionMigration,
 } from "../../server/db/safety";
 import {
   createStudent,
@@ -51,6 +51,8 @@ describe("S7 profile validation", () => {
       name: "年级待确认学生",
       grade: null,
     });
+    for (const grade of ["三年级", "高三"])
+      expect(parseStudentCreate({ name: "扩展年级", grade }).grade).toBe(grade);
     expect(
       parseStudentCreate({
         ...minimal,
@@ -81,7 +83,7 @@ describe("S7 profile validation", () => {
     for (const extra of [
       { name: " " },
       { name: "𠮷".repeat(65) },
-      { grade: "高三" },
+      { grade: "大学一年级" },
       { gender: "未知" },
       { school: "校".repeat(129) },
       { className: "班".repeat(33) },
