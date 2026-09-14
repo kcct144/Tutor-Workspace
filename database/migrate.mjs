@@ -80,6 +80,11 @@ const manifest = [
   { version: "016_audit_attendance_record", tables: [], references: [] },
   { version: "017_expand_student_grades", tables: [], references: [] },
   { version: "018_task_plan_progress", tables: [], references: [] },
+  {
+    version: "019_student_tags",
+    tables: ["student_tags"],
+    references: ["students"],
+  },
 ];
 
 function parseApprovedMigration(version, sql, tables, references) {

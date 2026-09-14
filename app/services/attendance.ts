@@ -1,5 +1,6 @@
 import type {
   AttendanceCellWrite,
+  AttendanceCellClear,
   AttendanceRecord,
   AttendanceRosterQuery,
   AttendanceRosterResult,
@@ -27,3 +28,6 @@ export const getAttendanceTodaySummary = (
 
 export const setAttendanceCell = (input: AttendanceCellWrite) =>
   apiWrite<AttendanceRecord>("/api/attendance/record", "PUT", input);
+
+export const clearScheduledAttendanceCell = (input: AttendanceCellClear) =>
+  apiWrite<{ cleared: true }>("/api/attendance/record", "DELETE", input);

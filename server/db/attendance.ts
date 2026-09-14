@@ -1,6 +1,7 @@
 import type { Connection, RowDataPacket } from "mysql2/promise";
 import type {
   AttendanceCellWrite,
+  AttendanceCellClear,
   AttendanceRecord,
   AttendanceRosterQuery,
   AttendanceRosterResult,
@@ -312,4 +313,67 @@ export async function setAttendanceCell(
     after: summary(updated),
   });
   return updated;
+}
+
+/**
+ * `null` means no class and is represented by no attendance row. To retain
+ * attendance history, this narrow delete is available only for `scheduled`.
+ */
+export async function clearScheduledAttendanceCell(
+  connection: Connection,
+  input: AttendanceCellClear,
+  actorId: string,
+): Promise<{ cleared: true }> {
+  let before: AttendanceRecord;
+  try {
+    before = await findAttendanceRecord(connection, input);
+  } catch (error) {
+    if (error instanceof ApiError && error.statusCode === 404) conflict();
+    throw error;
+  }
+  if (before.version !== input.expectedVersion) conflict();
+  if (before.status !== "scheduled")
+    throw new ApiError(
+      400,
+      "VALIDATION_ERROR",
+      "仅“有课”状态可取消排课；已形成的出勤记录不可清空。",
+    );
+
+  const result = await executeWrite(
+    connection,
+    "DELETE FROM attendance_records WHERE student_id=? AND attendance_date=? AND period=? AND version=? AND status='scheduled'",
+    [
+      input.studentId,
+      input.attendanceDate,
+      input.period,
+      input.expectedVersion,
+    ],
+  );
+  if (!result.affectedRows) {
+    let current: AttendanceRecord;
+    try {
+      current = await findAttendanceRecord(connection, input, true);
+    } catch (error) {
+      if (error instanceof ApiError && error.statusCode === 404) conflict();
+      throw error;
+    }
+    if (current.version !== input.expectedVersion) conflict();
+    if (current.status !== "scheduled")
+      throw new ApiError(
+        400,
+        "VALIDATION_ERROR",
+        "仅“有课”状态可取消排课；已形成的出勤记录不可清空。",
+      );
+    conflict();
+  }
+  await writeAuditLog(connection, {
+    actorUserId: actorId,
+    action: "attendance_record.cancel_schedule",
+    entityType: "attendance_record",
+    entityId: before.id,
+    studentId: before.studentId,
+    before: summary(before),
+    after: { status: null },
+  });
+  return { cleared: true };
 }

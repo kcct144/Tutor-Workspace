@@ -14,6 +14,7 @@ import type {
   DueState,
 } from "../../types/api/task-assignments.ts";
 import type { HomeQuery } from "../../types/api/home.ts";
+import { normalizeStudentTag } from "../../types/api/student-tags.ts";
 function invalid(message = "任务分配参数无效。"): never {
   throw new ApiError(400, "VALIDATION_ERROR", message);
 }
@@ -119,11 +120,24 @@ export function assignmentDueState(
 export function parseHomeQuery(
   value: Record<string, unknown>,
 ): HomeQuery & { page: number; pageSize: number } {
-  const input = fields(value, ["page", "pageSize", "grade"]);
+  const input = fields(value, ["page", "pageSize", "grade", "tag"]);
   const query = parseStudentQuery({
     page: input.page,
     pageSize: input.pageSize ?? "20",
     grade: input.grade,
   });
-  return { page: query.page, pageSize: query.pageSize, grade: query.grade };
+  let tag: string | undefined;
+  if (input.tag !== undefined) {
+    try {
+      tag = normalizeStudentTag(input.tag);
+    } catch {
+      throw new ApiError(400, "VALIDATION_ERROR", "标签筛选无效。");
+    }
+  }
+  return {
+    page: query.page,
+    pageSize: query.pageSize,
+    grade: query.grade,
+    ...(tag === undefined ? {} : { tag }),
+  };
 }

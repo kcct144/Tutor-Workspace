@@ -67,12 +67,14 @@ export function useAssignments(
   function reset() {
     query.value = { page: 1, pageSize: studentId() ? 5 : 8 };
   }
-  const completion = useAssignmentCompletion(refresh);
+  const completion = useAssignmentCompletion(refresh, {
+    source: "assignments",
+  });
   function change(id: string, checked: boolean) {
     const task = items.value.find((item) => item.id === id);
     if (task) void completion.setCompleted(task, checked);
   }
-  useTaskInvalidation(refresh);
+  useTaskInvalidation(refresh, "assignments");
   useStudentInvalidation(refresh);
   onScopeDispose(() => controller?.abort());
   return {

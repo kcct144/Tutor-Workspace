@@ -6,6 +6,9 @@ const route = useRoute();
 const { student, loading, error, notFound, refresh } = useStudentDetail(() =>
   String(route.params.id),
 );
+const { activeTab, visited } = useStudentDetailWorkspace(() =>
+  String(route.params.id),
+);
 </script>
 
 <template>
@@ -46,21 +49,49 @@ const { student, loading, error, notFound, refresh } = useStudentDetail(() =>
           :student="student"
           @edit="profile?.begin(student.id)"
           @status="statusDialog?.begin(student)"
-        />
-        <div class="detail-main">
-          <LearningRecordsSection :key="student.id" :student-id="student.id" />
-          <PlanProgressSection
-            :key="'plan-progress-' + student.id"
-            :student-id="student.id"
-          />
-          <ScoreRecordsSection
-            :key="'scores-' + student.id"
-            :student-id="student.id"
-          />
-          <AssignmentsSection
-            :key="'tasks-' + student.id"
-            :student-id="student.id"
-          />
+        >
+          <template #footer>
+            <StudentTagsPanel
+              :key="'tags-' + student.id"
+              :student-id="student.id"
+              embedded
+            />
+          </template>
+        </BasicInfoPanel>
+        <div class="detail-main detail-workspace">
+          <ATabs
+            v-model:active-key="activeTab"
+            :destroy-inactive-tab-pane="false"
+          >
+            <ATabPane key="records" tab="学习记录" force-render>
+              <LearningRecordsSection
+                :key="'records-' + student.id"
+                :student-id="student.id"
+              />
+            </ATabPane>
+            <ATabPane
+              key="scores"
+              tab="成绩记录"
+              :force-render="visited.scores"
+            >
+              <ScoreRecordsSection
+                v-if="visited.scores"
+                :key="'scores-' + student.id"
+                :student-id="student.id"
+              />
+            </ATabPane>
+            <ATabPane
+              key="assignments"
+              tab="任务列表"
+              :force-render="visited.assignments"
+            >
+              <AssignmentsSection
+                v-if="visited.assignments"
+                :key="'tasks-' + student.id"
+                :student-id="student.id"
+              />
+            </ATabPane>
+          </ATabs>
         </div>
       </div>
     </template>
@@ -71,3 +102,33 @@ const { student, loading, error, notFound, refresh } = useStudentDetail(() =>
     <StudentStatusDialog ref="statusDialog" />
   </div>
 </template>
+
+<style scoped>
+.detail-workspace {
+  min-width: 0;
+}
+.detail-workspace :deep(.ant-tabs-nav) {
+  margin: 0 0 12px;
+}
+.detail-workspace :deep(.ant-tabs-nav-wrap) {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.detail-workspace :deep(.ant-tabs-nav-list) {
+  flex: 0 0 auto;
+}
+.detail-workspace :deep(.ant-tabs-tab-btn:focus-visible) {
+  outline: 2px solid #477657;
+  outline-offset: 3px;
+}
+.detail-workspace :deep(.detail-section-card) {
+  margin-bottom: 0;
+}
+@media (max-width: 720px) {
+  .detail-workspace {
+    width: 100%;
+    overflow: hidden;
+  }
+}
+</style>

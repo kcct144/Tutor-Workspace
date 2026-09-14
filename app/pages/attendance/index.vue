@@ -34,9 +34,11 @@ const {
   refresh,
   resetFilters,
   changeStatus,
+  clearScheduled,
   cellKey,
 } = useAttendance();
 
+const clearScheduledValue = "__clear_scheduled__";
 const statusOptions = attendanceStatuses.map((value) => ({
   value,
   label: attendanceStatusLabels[value],
@@ -45,6 +47,11 @@ const statusOptions = attendanceStatuses.map((value) => ({
 const futureStatusOptions = statusOptions.filter(
   (option) => option.value === "scheduled",
 );
+const clearScheduledOption = {
+  value: clearScheduledValue,
+  label: "取消排课（恢复无课）",
+  symbol: "—",
+};
 const dateMap = computed(
   () => new Map(dates.value.map((date) => [date.iso, date])),
 );
@@ -196,8 +203,25 @@ function selectStatus(
   value: unknown,
 ) {
   void finishCell();
+  if (value === clearScheduledValue) {
+    void clearScheduled(studentId, date, period);
+    return;
+  }
   if (attendanceStatuses.includes(value as AttendanceStatus))
     void changeStatus(studentId, date, period, value as AttendanceStatus);
+}
+
+function cellOptions(
+  studentId: string,
+  date: string,
+  period: AttendancePeriod,
+) {
+  const options = dateMap.value.get(date)?.future
+    ? futureStatusOptions
+    : statusOptions;
+  return cellStatus(studentId, date, period) === "scheduled"
+    ? [...options, clearScheduledOption]
+    : options;
 }
 </script>
 
@@ -382,9 +406,7 @@ function selectStatus(
                     cellStatus(record.student.id, String(column.key), period)
                   "
                   :options="
-                    dateMap.get(String(column.key))?.future
-                      ? futureStatusOptions
-                      : statusOptions
+                    cellOptions(record.student.id, String(column.key), period)
                   "
                   option-label-prop="symbol"
                   placeholder="—"
@@ -396,7 +418,7 @@ function selectStatus(
                   :title="
                     cellTitle(
                       cellKey(record.student.id, String(column.key), period),
-                      `${record.student.name} · ${column.key} · ${attendancePeriodLabels[period]}${dateMap.get(String(column.key))?.future ? ' · 未来日期仅可标记有课' : ''}`,
+                      `${record.student.name} · ${column.key} · ${attendancePeriodLabels[period]}${dateMap.get(String(column.key))?.future ? ' · 未来日期仅可标记有课或恢复无课' : ''}`,
                     )
                   "
                   @blur="closeCell"
@@ -427,7 +449,7 @@ function selectStatus(
                     cellTitle(
                       cellKey(record.student.id, String(column.key), period),
                       dateMap.get(String(column.key))?.future
-                        ? '未来日期仅可标记有课'
+                        ? '未来日期仅可标记有课；已设有课时可取消排课恢复无课'
                         : '点击修改状态',
                     )
                   "

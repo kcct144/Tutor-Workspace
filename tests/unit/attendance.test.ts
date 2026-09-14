@@ -2,11 +2,13 @@ import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   parseAttendanceCellWrite,
+  parseAttendanceCellClear,
   parseAttendanceMonthQuery,
   parseAttendanceSummaryQuery,
 } from "../../server/db/attendance-rules";
 import {
   attendanceStudentFilter,
+  clearScheduledAttendanceCell,
   projectAttendanceRecord,
   setAttendanceCell,
 } from "../../server/db/attendance";
@@ -17,7 +19,10 @@ import {
 import { auditEntityTypes } from "../../server/db/audit";
 import { inTransaction } from "../../server/db/pool";
 import { ApiError, apiResponse } from "../../server/utils/api";
-import type { AttendanceCellWrite } from "../../types/api/attendance";
+import type {
+  AttendanceCellClear,
+  AttendanceCellWrite,
+} from "../../types/api/attendance";
 
 type StoredAttendance = {
   id: string;
@@ -162,6 +167,21 @@ class MemoryAttendanceConnection {
       return [{ affectedRows: 1 }];
     }
 
+    if (sql.startsWith("DELETE FROM attendance_records")) {
+      const [studentId, attendanceDate, period, version] = values;
+      const index = this.records.findIndex(
+        (entry) =>
+          entry.studentId === String(studentId) &&
+          entry.attendanceDate === String(attendanceDate) &&
+          entry.period === String(period) &&
+          entry.version === Number(version) &&
+          entry.status === "scheduled",
+      );
+      if (index < 0) return [{ affectedRows: 0 }];
+      this.records.splice(index, 1);
+      return [{ affectedRows: 1 }];
+    }
+
     if (sql.startsWith("INSERT INTO audit_logs")) {
       if (this.failAudit) throw new Error("audit write failed");
       this.audits.push({ action: String(values[2]) });
@@ -185,6 +205,15 @@ async function writeInMemory(
 ) {
   return inTransaction(connection as never, () =>
     setAttendanceCell(connection as never, input, "1"),
+  );
+}
+
+async function clearInMemory(
+  connection: MemoryAttendanceConnection,
+  input: AttendanceCellClear,
+) {
+  return inTransaction(connection as never, () =>
+    clearScheduledAttendanceCell(connection as never, input, "1"),
   );
 }
 
@@ -225,6 +254,30 @@ describe("S10 attendance validation", () => {
     ])
       expect(() =>
         parseAttendanceCellWrite({ ...write, ...patch }, "2026-09-08"),
+      ).toThrow();
+
+    expect(
+      parseAttendanceCellClear({
+        studentId: "1",
+        attendanceDate: "2026-09-09",
+        period: "morning",
+        expectedVersion: 1,
+      }),
+    ).toMatchObject({ expectedVersion: 1 });
+    for (const patch of [
+      { expectedVersion: null },
+      { expectedVersion: 0 },
+      { status: "scheduled" },
+      { actorId: "1" },
+    ])
+      expect(() =>
+        parseAttendanceCellClear({
+          studentId: "1",
+          attendanceDate: "2026-09-09",
+          period: "morning",
+          expectedVersion: 1,
+          ...patch,
+        }),
       ).toThrow();
 
     expect(parseAttendanceMonthQuery({ month: "2026-09" })).toEqual({
@@ -401,6 +454,65 @@ describe("S10 attendance write concurrency and transaction behavior", () => {
     );
     expect(connection.records).toEqual([]);
     expect(connection.audits).toEqual([]);
+  });
+
+  it("cancels only a current scheduled record back to the no-class state", async () => {
+    const connection = new MemoryAttendanceConnection();
+    await writeInMemory(connection, { ...cell, status: "scheduled" });
+    await expect(
+      clearInMemory(connection, {
+        studentId: "1",
+        attendanceDate: "2026-09-08",
+        period: "morning",
+        expectedVersion: 1,
+      }),
+    ).resolves.toEqual({ cleared: true });
+    expect(connection.records).toEqual([]);
+    expect(connection.audits.map((audit) => audit.action)).toEqual([
+      "attendance_record.create",
+      "attendance_record.cancel_schedule",
+    ]);
+  });
+
+  it("rejects cancelling a stale or non-scheduled record without deleting it", async () => {
+    const connection = new MemoryAttendanceConnection();
+    await writeInMemory(connection, cell);
+    await expect(
+      clearInMemory(connection, {
+        studentId: "1",
+        attendanceDate: "2026-09-08",
+        period: "morning",
+        expectedVersion: 1,
+      }),
+    ).rejects.toMatchObject({ statusCode: 400, code: "VALIDATION_ERROR" });
+    await expect(
+      clearInMemory(connection, {
+        studentId: "1",
+        attendanceDate: "2026-09-08",
+        period: "morning",
+        expectedVersion: 0,
+      }),
+    ).rejects.toMatchObject({ statusCode: 409, code: "VERSION_CONFLICT" });
+    expect(connection.records[0]).toMatchObject({
+      status: "present",
+      version: 1,
+    });
+  });
+
+  it("rolls back cancellation when its audit write fails", async () => {
+    const connection = new MemoryAttendanceConnection();
+    await writeInMemory(connection, { ...cell, status: "scheduled" });
+    connection.failAudit = true;
+    await expect(
+      clearInMemory(connection, {
+        studentId: "1",
+        attendanceDate: "2026-09-08",
+        period: "morning",
+        expectedVersion: 1,
+      }),
+    ).rejects.toThrow("audit write failed");
+    expect(connection.records).toHaveLength(1);
+    expect(connection.records[0]).toMatchObject({ status: "scheduled" });
   });
 });
 

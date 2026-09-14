@@ -5,6 +5,7 @@ import { ServiceError } from "~/services/http";
 import { useTaskInvalidation } from "./useTaskInvalidation";
 import { useStudentInvalidation } from "./useStudentInvalidation";
 import { useAssignmentCompletion } from "./useAssignmentCompletion";
+
 export function useHome() {
   const query = ref<HomeQuery>({ page: 1, pageSize: 20 }),
     items = ref<HomeStudent[]>([]),
@@ -40,7 +41,7 @@ export function useHome() {
     }
   }
   watch(
-    () => query.value.grade,
+    () => [query.value.grade, query.value.tag],
     () => {
       if (query.value.page !== 1) query.value.page = 1;
       else void refresh();
@@ -51,10 +52,13 @@ export function useHome() {
     () => void refresh(),
     { immediate: true },
   );
-  const completion = useAssignmentCompletion(refresh);
+  const completion = useAssignmentCompletion(refresh, {
+    source: "home",
+    refreshOnFailure: false,
+  });
   function change(id: string, checked: boolean) {
     const task = items.value
-      .flatMap((item) => [...item.pendingTasks, ...item.completedTasks])
+      .flatMap((item) => item.pendingTasks)
       .find((item) => item.id === id);
     if (task) void completion.setCompleted(task, checked);
   }
@@ -63,7 +67,7 @@ export function useHome() {
     clearTimeout(timer);
     timer = setTimeout(() => (message.value = ""), 2200);
   }
-  useTaskInvalidation(refresh);
+  useTaskInvalidation(refresh, "home");
   useStudentInvalidation(refresh);
   onScopeDispose(() => {
     controller?.abort();

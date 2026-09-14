@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { studentGrades, type StudentGrade } from "../../types/api/students";
+import { loadStudentTagOptions } from "~/services/student-tags";
 const {
   query,
   items,
@@ -32,6 +33,14 @@ const selectedGrade = computed<string>({
         </h1>
       </div>
       <div class="intro-actions">
+        <RemoteSelect
+          v-model="query.tag"
+          :loader="loadStudentTagOptions"
+          :selected-label="query.tag"
+          placeholder="全部学生标签"
+          aria-label="学生标签筛选"
+          style="width: 180px; max-width: 100%"
+        />
         <AButton class="action-button" @click="navigateTo('/students')"
           ><span class="action-icon">＋</span>添加学生</AButton
         >
@@ -61,7 +70,7 @@ const selectedGrade = computed<string>({
           {{ grade }}
         </button>
       </div>
-      <span class="prototype-note">S6 · 在读学生与任务实时数据</span>
+      <span class="prototype-note">在读学生 · 待办与最新动态</span>
     </div>
     <p v-if="notice" role="status">{{ notice }}</p>
     <ASkeleton v-if="loading" active aria-label="正在加载首页学生" />
@@ -71,60 +80,13 @@ const selectedGrade = computed<string>({
       ></AAlert
     >
     <div v-else-if="items.length" class="student-grid">
-      <article v-for="student in items" :key="student.id" class="student-card">
-        <div class="student-card-head">
-          <div>
-            <h2>
-              {{ student.name
-              }}<span
-                v-if="
-                  student.expiresInDays !== null &&
-                  student.expiresInDays >= 0 &&
-                  student.expiresInDays <= 7
-                "
-                class="expiry-tag"
-                >{{ student.expiresInDays }} 天后到期</span
-              >
-            </h2>
-            <span class="grade-label"
-              >{{ student.grade ?? "年级待确认"
-              }}<template v-if="student.subjects.length">
-                · {{ student.subjects.join("、") }}</template
-              ></span
-            >
-          </div>
-          <span class="task-progress"
-            >{{ student.completedCount }}/{{
-              student.pendingCount + student.completedCount
-            }}</span
-          >
-        </div>
-        <div class="plan-row">
-          <div class="plan-tags"><PlanTags :plans="student.plans" /></div>
-        </div>
-        <div class="task-groups">
-          <HomeTaskGroup
-            title="未完成"
-            :tasks="student.pendingTasks"
-            :remaining="student.pendingRemaining"
-            :completed="false"
-            :pending-ids="pendingIds"
-            @change="change"
-          /><HomeTaskGroup
-            title="已完成"
-            :tasks="student.completedTasks"
-            :remaining="student.completedRemaining"
-            :completed="true"
-            :pending-ids="pendingIds"
-            @change="change"
-          /><span v-if="!student.pendingCount && !student.completedCount"
-            >暂无任务</span
-          >
-        </div>
-        <NuxtLink class="detail-link" :to="'/students/' + student.id"
-          >查看详情 <span>→</span></NuxtLink
-        >
-      </article>
+      <HomeStudentCard
+        v-for="student in items"
+        :key="student.id"
+        :student="student"
+        :pending-ids="pendingIds"
+        @change="change"
+      />
     </div>
     <AEmpty v-else description="暂无符合条件的在读学生" class="empty-state" />
     <APagination
@@ -140,3 +102,29 @@ const selectedGrade = computed<string>({
     >
   </div>
 </template>
+<style scoped>
+.intro-actions {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.filter-pills {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.filter-pill {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  .page-intro {
+    align-items: stretch;
+  }
+  .intro-actions {
+    width: 100%;
+  }
+  .toolbar-line {
+    min-width: 0;
+  }
+}
+</style>

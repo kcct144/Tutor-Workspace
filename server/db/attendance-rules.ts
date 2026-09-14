@@ -2,6 +2,7 @@ import {
   attendancePeriods,
   attendanceStatuses,
   type AttendanceCellWrite,
+  type AttendanceCellClear,
   type AttendancePeriod,
   type AttendanceRosterQuery,
   type AttendanceStatus,
@@ -132,6 +133,24 @@ export function parseAttendanceCellWrite(
     period: period(input.period),
     status: attendanceStatus,
     expectedVersion,
+  };
+}
+
+/** Only a persisted `scheduled` record may be cleared back to no class. */
+export function parseAttendanceCellClear(body: unknown): AttendanceCellClear {
+  if (!body || typeof body !== "object" || Array.isArray(body))
+    invalid("取消排课请求须为JSON对象。");
+  const input = body as Record<string, unknown>;
+  const allowed = ["studentId", "attendanceDate", "period", "expectedVersion"];
+  if (Object.keys(input).some((key) => !allowed.includes(key)))
+    invalid("请求含不可写字段。");
+  const attendanceDate = dateOnly(input.attendanceDate);
+  if (attendanceDate < "1900-01-01") invalid("出勤日期不得早于1900-01-01。");
+  return {
+    studentId: positiveId(input.studentId),
+    attendanceDate,
+    period: period(input.period),
+    expectedVersion: uint(input.expectedVersion, "版本号", true),
   };
 }
 

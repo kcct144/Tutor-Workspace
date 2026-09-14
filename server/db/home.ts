@@ -3,16 +3,33 @@ import type { HomeQuery, HomePage, HomeStudent } from "../../types/api/home.ts";
 import { shanghaiToday } from "./contracts-rules.ts";
 import { studentContractAggregates } from "./contracts.ts";
 import { studentPlanTags } from "./study-plans.ts";
-import { studentAssignmentSummaries } from "./task-assignments.ts";
+import { homeTaskData } from "./home-activities.ts";
+import type { AuthContext } from "../auth/context.ts";
+import { studentTagMap } from "./student-tags.ts";
 export async function listHome(
   db: Connection,
   query: HomeQuery & { page: number; pageSize: number },
+  auth: Pick<AuthContext, "role" | "userId">,
   today = shanghaiToday(),
 ): Promise<HomePage> {
-  const where = " WHERE status='在读'" + (query.grade ? " AND grade=?" : "");
-  const values = query.grade ? [query.grade] : [];
+  const scope =
+    " WHERE status='在读'" +
+    (auth.role === "admin" ? "" : " AND owner_user_id=?");
+  const scopeValues = auth.role === "admin" ? [] : [auth.userId];
+  const where =
+    scope +
+    (query.grade ? " AND grade=?" : "") +
+    (query.tag
+      ? " AND EXISTS (SELECT 1 FROM student_tags st WHERE st.student_id=students.id AND st.tag=?)"
+      : "");
+  const values = [
+    ...scopeValues,
+    ...(query.grade ? [query.grade] : []),
+    ...(query.tag ? [query.tag] : []),
+  ];
   const [active] = await db.execute<RowDataPacket[]>(
-    "SELECT COUNT(*) AS total FROM students WHERE status='在读' LIMIT 1",
+    "SELECT COUNT(*) AS total FROM students" + scope + " LIMIT 1",
+    scopeValues,
   );
   const [counts] = await db.execute<RowDataPacket[]>(
     "SELECT COUNT(*) AS total FROM students" + where + " LIMIT 1",
@@ -25,20 +42,20 @@ export async function listHome(
     [...values, query.pageSize, (query.page - 1) * query.pageSize],
   );
   const ids = rows.map((row) => String(row.id));
+  const tags = await studentTagMap(db, ids);
   const contracts = await studentContractAggregates(db, ids, today),
     plans = await studentPlanTags(db, ids),
-    assignments = await studentAssignmentSummaries(db, ids, today);
+    assignments = await homeTaskData(db, ids, today);
   const items: HomeStudent[] = rows.map((row) => {
     const id = String(row.id),
       contract = contracts.get(id) ?? { subjects: [], expiryDate: null },
-      tasks = assignments.get(id) ?? {
+      tasks = assignments.pending.get(id) ?? {
         pendingTasks: [],
-        completedTasks: [],
         pendingCount: 0,
-        completedCount: 0,
       };
     return {
       id,
+      tags: tags.get(id) ?? [],
       name: row.name,
       grade: row.grade,
       school: row.school,
@@ -54,13 +71,10 @@ export async function listHome(
             ),
       plans: plans.get(id) ?? [],
       ...tasks,
+      activities: assignments.activities.get(id) ?? [],
       pendingRemaining: Math.max(
         0,
         tasks.pendingCount - tasks.pendingTasks.length,
-      ),
-      completedRemaining: Math.max(
-        0,
-        tasks.completedCount - tasks.completedTasks.length,
       ),
     };
   });

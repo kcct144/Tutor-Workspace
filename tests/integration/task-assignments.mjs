@@ -350,26 +350,22 @@ await runDatabaseCommand(async (db) => {
         assert.equal(home.total, home.activeStudents);
         for (const card of home.items) {
           const relevant = all.items.filter((row) => row.studentId === card.id),
-            pending = relevant.filter((row) => row.status === "pending"),
-            completed = relevant.filter((row) => row.status === "completed");
+            pending = relevant.filter((row) => row.status === "pending");
           assert.equal(card.pendingCount, pending.length);
-          assert.equal(card.completedCount, completed.length);
           assert.equal(card.pendingRemaining, Math.max(0, pending.length - 3));
-          assert.equal(
-            card.completedRemaining,
-            Math.max(0, completed.length - 3),
-          );
           assert.ok(
-            card.pendingTasks.length <= 3 && card.completedTasks.length <= 3,
+            card.pendingTasks.length <= 3 && card.activities.length <= 5,
           );
-          for (const row of [...card.pendingTasks, ...card.completedTasks])
-            assert.deepEqual(
-              row,
-              relevant.find((item) => item.id === row.id),
-            );
+          for (const row of card.pendingTasks) {
+            const full = relevant.find((item) => item.id === row.id);
+            assert.equal(row.taskTitle, full.taskTitle);
+            assert.equal(row.version, full.version);
+            assert.equal(row.status, "pending");
+            assert.ok(!("description" in row));
+          }
         }
         const card = home.items.find((row) => row.id === context.studentIds[0]);
-        assert.equal(card.completedRemaining, 2);
+        assert.ok(card.activities.length <= 5);
         const filtered = await request(
           "home/list?grade=" + encodeURIComponent(card.grade),
         );

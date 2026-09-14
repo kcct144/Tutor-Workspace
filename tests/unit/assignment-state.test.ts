@@ -135,11 +135,9 @@ describe("S6 shared state", () => {
       expiresInDays: null,
       plans: [],
       pendingTasks: [task],
-      completedTasks: [],
+      activities: [],
       pendingCount: 8,
-      completedCount: 4,
       pendingRemaining: 7,
-      completedRemaining: 4,
     };
     api.getHome.mockResolvedValue({
       items: [card],
@@ -153,21 +151,85 @@ describe("S6 shared state", () => {
     await flush();
     expect(state.items.value[0]!.pendingCount).toBe(8);
     expect(state.activeStudents.value).toBe(4);
-    api.completeAssignment.mockResolvedValue({ ...task, status: "completed" });
+    api.completeAssignment.mockResolvedValue({
+      ...task,
+      status: "completed",
+      completedAt: "2026-09-13T08:00:00Z",
+      version: 2,
+    });
     api.getHome.mockResolvedValue({
-      items: [{ ...card, pendingCount: 7, completedCount: 5 }],
+      items: [
+        {
+          ...card,
+          pendingCount: 7,
+          pendingTasks: [],
+          activities: [
+            {
+              id: "activity:task_completed:1",
+              type: "task_completed",
+              taskTitle: "任务",
+              occurredAt: "2026-09-13T08:00:00Z",
+            },
+          ],
+        },
+      ],
       total: 1,
       activeStudents: 4,
       page: 1,
       pageSize: 20,
     });
+    const requestsBefore = api.getHome.mock.calls.length;
     await state.setCompleted(task, true);
-    expect(state.items.value[0]!.completedCount).toBe(5);
+    expect(state.items.value[0]!.pendingCount).toBe(7);
+    expect(state.items.value[0]!.pendingTasks).toEqual([]);
+    expect(state.items.value[0]!.activities[0]).toMatchObject({
+      id: "activity:task_completed:1",
+      type: "task_completed",
+    });
+    expect(api.getHome).toHaveBeenCalledTimes(requestsBefore + 1);
     state.query.value.page = 2;
     await flush();
     state.query.value.grade = "初二";
     await flush();
     expect(state.query.value.page).toBe(1);
+    scope.stop();
+  });
+
+  it("keeps the current home cards visible when completion cannot be confirmed", async () => {
+    api.getHome.mockResolvedValue({
+      items: [
+        {
+          id: "1",
+          name: "合成",
+          grade: "初一",
+          school: null,
+          status: "在读",
+          subjects: [],
+          expiryDate: null,
+          expiresInDays: null,
+          plans: [],
+          pendingTasks: [task],
+          activities: [],
+          pendingCount: 1,
+          pendingRemaining: 0,
+        },
+      ],
+      total: 1,
+      activeStudents: 1,
+      page: 1,
+      pageSize: 20,
+    });
+    const scope = effectScope();
+    const state = scope.run(() => useHome())!;
+    await flush();
+    const requestsBefore = api.getHome.mock.calls.length;
+    api.completeAssignment.mockRejectedValue(
+      new ServiceError("保存未确认", 503),
+    );
+    await state.setCompleted(task, true);
+    expect(api.getHome).toHaveBeenCalledTimes(requestsBefore);
+    expect(state.items.value[0]!.pendingTasks[0]?.id).toBe(task.id);
+    expect(state.notice.value).toBe("保存未确认");
     scope.stop();
   });
 });

@@ -88,5 +88,16 @@ defineEmits<{ edit: []; status: [] }>();
         <dd><PlanTags :plans="student.plans" /></dd>
       </div>
     </dl>
+    <footer v-if="$slots.footer" class="basic-info-footer">
+      <slot name="footer" />
+    </footer>
   </section>
 </template>
+
+<style scoped>
+.basic-info-footer {
+  min-width: 0;
+  padding-top: 18px;
+  border-top: 1px solid #edf0eb;
+}
+</style>

@@ -17,9 +17,11 @@
 
 数据库约束包括固定时段和状态检查、正版本检查，以及唯一键 `(student_id, attendance_date, period)`。索引包括月度/时段/状态组合、学生日期和更新时间。服务端另校验未来日期只能保存 `scheduled`，以 Asia/Shanghai 日期为准。
 
+“无课”是空单元格而不是第六种 `status`：没有 `attendance_records` 行即表示无课或未安排。只有仍为 `scheduled` 的记录可以在乐观锁版本匹配时删除，恢复为空；`present`、`sick_leave`、`personal_leave`、`absent` 永不通过该路径删除。
+
 ## 审计
 
-迁移 `016_audit_attendance_record.sql` 将 `attendance_record` 加入现有 `audit_logs.entity_type` 白名单。出勤创建与更新均在同一数据库事务内写审计，摘要只包含日期、时段和状态；不会写入联系方式、Cookie、CSRF 或登录秘密。
+迁移 `016_audit_attendance_record.sql` 将 `attendance_record` 加入现有 `audit_logs.entity_type` 白名单。出勤创建、更新与取消排课均在同一数据库事务内写审计，摘要只包含日期、时段和状态；取消排课的审计后值为 `status: null`。不会写入联系方式、Cookie、CSRF 或登录秘密。
 
 ## 并发
 

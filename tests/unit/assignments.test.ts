@@ -11,7 +11,6 @@ import {
 import {
   createAssignmentBatch,
   completeAssignment,
-  studentAssignmentSummaries,
   taskAssignmentCounts,
 } from "../../server/db/task-assignments";
 import { parseMigration } from "../../server/db/safety";
@@ -214,35 +213,6 @@ describe("S6 input and data rules", () => {
       ),
     ).rejects.toMatchObject({ statusCode: 409 });
   });
-  it("summary counts are independent of three rows; batched no N+1", async () => {
-    const execute = vi.fn().mockResolvedValue([
-      [
-        { ...rawRow, group_count: 7 },
-        { ...rawRow, id: "2", group_count: 7 },
-        { ...rawRow, id: "3", group_count: 7 },
-        {
-          ...rawRow,
-          id: "4",
-          status: "completed",
-          completed_at: "2000-01-01 00:00:00.000",
-          group_count: 9,
-        },
-      ],
-    ]);
-    const result = await studentAssignmentSummaries(
-      { execute } as unknown as Connection,
-      ["1", "2"],
-      today,
-    );
-    expect(result.get("1")).toMatchObject({
-      pendingCount: 7,
-      completedCount: 9,
-    });
-    expect(result.get("1")!.pendingTasks).toHaveLength(3);
-    expect(execute).toHaveBeenCalledTimes(1);
-    expect(execute.mock.calls[0]![0]).toContain("ROW_NUMBER()");
-    expect(execute.mock.calls[0]![1]).toEqual(["1", "2", 12]);
-  });
   it("distinct student counts and empty home avoid per-student queries", async () => {
     const execute = vi
       .fn()
@@ -260,6 +230,7 @@ describe("S6 input and data rules", () => {
     const result = await listHome(
       { execute } as unknown as Connection,
       { page: 1, pageSize: 20, grade: "高二" },
+      { role: "admin", userId: "1" },
       today,
     );
     expect(result).toMatchObject({ items: [], total: 0, activeStudents: 4 });

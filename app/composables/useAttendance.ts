@@ -10,6 +10,7 @@ import type {
 import {
   getAttendanceMonth,
   getAttendanceTodaySummary,
+  clearScheduledAttendanceCell,
   setAttendanceCell,
 } from "~/services/attendance";
 import { ServiceError } from "~/services/http";
@@ -284,6 +285,59 @@ export function useAttendance() {
     }
   }
 
+  async function clearScheduled(
+    studentId: string,
+    attendanceDate: string,
+    period: AttendancePeriod,
+  ) {
+    const key = cellKey(studentId, attendanceDate, period);
+    const existing = recordMap.value.get(key);
+    if (
+      savingKeys.value.has(key) ||
+      !existing ||
+      existing.status !== "scheduled"
+    )
+      return;
+    const previous = { ...existing };
+    records.value = records.value.filter(
+      (record) =>
+        !(
+          record.studentId === studentId &&
+          record.attendanceDate === attendanceDate &&
+          record.period === period
+        ),
+    );
+    savingKeys.value = new Set(savingKeys.value).add(key);
+    cellErrors.value.delete(key);
+    try {
+      await clearScheduledAttendanceCell({
+        studentId,
+        attendanceDate,
+        period,
+        expectedVersion: existing.version,
+      });
+      savedKeys.value = new Set(savedKeys.value).add(key);
+      window.setTimeout(() => {
+        const next = new Set(savedKeys.value);
+        next.delete(key);
+        savedKeys.value = next;
+      }, 1300);
+      await refreshSummary();
+    } catch (cause) {
+      records.value = [...records.value, previous];
+      const errorMessage = message(
+        cause,
+        "取消排课结果不明，原状态已恢复；请刷新当月数据核对。",
+      );
+      cellErrors.value = new Map(cellErrors.value).set(key, errorMessage);
+      error.value = "取消排课失败：" + errorMessage;
+    } finally {
+      const next = new Set(savingKeys.value);
+      next.delete(key);
+      savingKeys.value = next;
+    }
+  }
+
   watch([keyword, grade, gender, status, month], () => void refresh());
   watch(selectedPeriod, (value) => {
     savePeriod(value);
@@ -318,6 +372,7 @@ export function useAttendance() {
     refresh,
     resetFilters,
     changeStatus,
+    clearScheduled,
     cellKey,
   };
 }
