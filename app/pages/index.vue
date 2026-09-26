@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { studentGrades, type StudentGrade } from "../../types/api/students";
+import type { HomeStudent } from "../../types/api/home";
 import { loadStudentTagOptions } from "~/services/student-tags";
 const {
   query,
@@ -44,6 +45,12 @@ const selectedSubjects = computed<string[]>({
     };
   },
 });
+const quickStudent = ref<{ id: string; name: string } | null>(null);
+const quickRecordOpen = ref(false);
+function beginQuickRecord(student: HomeStudent) {
+  quickStudent.value = { id: student.id, name: student.name };
+  quickRecordOpen.value = true;
+}
 </script>
 <template>
   <div class="home-page">
@@ -133,6 +140,7 @@ const selectedSubjects = computed<string[]>({
         :student="student"
         :pending-ids="pendingIds"
         @change="change"
+        @quick-record="beginQuickRecord"
       />
     </div>
     <AEmpty
@@ -155,6 +163,11 @@ const selectedSubjects = computed<string[]>({
     <Transition name="toast"
       ><div v-if="message" class="toast-message">{{ message }}</div></Transition
     >
+    <QuickRecordDialog
+      v-model:open="quickRecordOpen"
+      :student="quickStudent"
+      @saved="showMessage('学习记录已新增。')"
+    />
   </div>
 </template>
 <style scoped>

@@ -1,7 +1,12 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import type { HomeStudent, HomeActivity } from "../../types/api/home";
 defineProps<{ student: HomeStudent; pendingIds: string[] }>();
-defineEmits<{ change: [id: string, completed: boolean] }>();
+const emit = defineEmits<{
+  change: [id: string, completed: boolean];
+  quickRecord: [student: HomeStudent];
+}>();
+const taskListOpen = ref(false);
 const dateFormat = new Intl.DateTimeFormat("zh-CN", {
   timeZone: "Asia/Shanghai",
   month: "2-digit",
@@ -37,7 +42,7 @@ function openStudent(event: MouseEvent | KeyboardEvent, id: string) {
     @keydown="openStudent($event, student.id)"
   >
     <div class="student-card-head">
-      <div>
+      <div class="student-card-title">
         <h2>
           <span class="student-name" :title="student.name">{{
             student.name
@@ -59,6 +64,16 @@ function openStudent(event: MouseEvent | KeyboardEvent, id: string) {
           ></span
         >
       </div>
+      <AButton
+        type="primary"
+        shape="circle"
+        size="small"
+        class="quick-record-button"
+        aria-label="快速添加学习记录"
+        title="快速添加学习记录"
+        @click.stop="emit('quickRecord', student)"
+        >＋</AButton
+      >
     </div>
     <div class="card-labels">
       <div class="plan-row">
@@ -77,37 +92,54 @@ function openStudent(event: MouseEvent | KeyboardEvent, id: string) {
       </div>
     </div>
     <section class="pending-section" aria-label="待办任务">
-      <h3>待办任务</h3>
-      <div
-        v-for="task in student.pendingTasks"
-        :key="task.id"
-        class="pending-row"
-      >
-        <span class="check-target" @click.stop @keydown.stop
-          ><AssignmentCheckbox
-            status="pending"
-            :disabled="pendingIds.includes(task.id)"
-            :label="'完成 ' + task.taskTitle"
-            @change="(value) => $emit('change', task.id, value)"
-        /></span>
-        <span class="ellipsis" :title="task.taskTitle">{{
-          task.taskTitle
-        }}</span>
-        <time
-          :datetime="task.dueDate"
-          :title="
-            task.dueDate + (task.dueState === 'overdue' ? ' · 已逾期' : '')
-          "
-          :class="{ overdue: task.dueState === 'overdue' }"
-          >{{ task.dueDate.slice(5).replace("-", "/") }}</time
+      <h3>
+        待办任务
+        <button
+          type="button"
+          class="task-list-toggle"
+          @click.stop="taskListOpen = !taskListOpen"
         >
-      </div>
-      <p v-if="!student.pendingTasks.length" class="empty-copy">
-        暂无进行中任务
-      </p>
-      <p v-if="student.pendingRemaining > 0" class="remaining">
-        +{{ student.pendingRemaining }} 项待办
-      </p>
+          全部任务
+        </button>
+      </h3>
+      <StudentTasksPopover
+        v-model:open="taskListOpen"
+        :student-id="student.id"
+        :student-name="student.name"
+      >
+        <div class="pending-list">
+          <div
+            v-for="task in student.pendingTasks"
+            :key="task.id"
+            class="pending-row"
+          >
+            <span class="check-target" @click.stop @keydown.stop
+              ><AssignmentCheckbox
+                status="pending"
+                :disabled="pendingIds.includes(task.id)"
+                :label="'完成 ' + task.taskTitle"
+                @change="(value) => $emit('change', task.id, value)"
+            /></span>
+            <span class="ellipsis" :title="task.taskTitle">{{
+              task.taskTitle
+            }}</span>
+            <time
+              :datetime="task.dueDate"
+              :title="
+                task.dueDate + (task.dueState === 'overdue' ? ' · 已逾期' : '')
+              "
+              :class="{ overdue: task.dueState === 'overdue' }"
+              >{{ task.dueDate.slice(5).replace("-", "/") }}</time
+            >
+          </div>
+          <p v-if="!student.pendingTasks.length" class="empty-copy">
+            暂无进行中任务
+          </p>
+          <p v-if="student.pendingRemaining > 0" class="remaining">
+            +{{ student.pendingRemaining }} 项待办
+          </p>
+        </div>
+      </StudentTasksPopover>
     </section>
     <section class="activity-section" aria-label="最新动态">
       <h3>最新动态</h3>
@@ -144,10 +176,16 @@ function openStudent(event: MouseEvent | KeyboardEvent, id: string) {
 .student-card-head {
   flex: 0 0 auto;
   padding-bottom: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
-.student-card-head > div {
+.student-card-title {
   min-width: 0;
-  width: 100%;
+  flex: 1;
+}
+.quick-record-button {
+  flex: 0 0 auto;
 }
 .student-card h2 {
   flex-wrap: nowrap;
@@ -195,6 +233,22 @@ h3 {
   margin: 0 0 5px;
   font-size: 12px;
   color: #647269;
+}
+.pending-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.task-list-toggle {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: #477657;
+  font-size: 12px;
+  cursor: pointer;
+}
+.task-list-toggle:hover {
+  text-decoration: underline;
 }
 .pending-section {
   flex: 0 0 132px;
