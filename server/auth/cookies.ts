@@ -1,16 +1,32 @@
 import type { H3Event } from "h3";
 
-export const sessionCookieName = "tws_session";
-export const csrfCookieName = "tws_csrf";
 const sessionMaxAge = 7 * 24 * 60 * 60;
 
-function localHost(event: H3Event): boolean {
-  const host = getRequestURL(event).hostname.toLowerCase();
-  return host === "127.0.0.1" || host === "localhost" || host === "::1";
+export function secureCookieForProtocol(protocol: string): boolean {
+  return protocol === "https";
 }
 
-export function assertLoopbackRequest(event: H3Event): void {
-  if (!localHost(event)) throw new Error("本机访问边界校验失败。");
+export function originsMatch(
+  requestOrigin: string,
+  origin: string | undefined,
+): boolean {
+  return origin !== undefined && origin === requestOrigin;
+}
+
+export function browserCookieOptions(event: H3Event) {
+  return {
+    path: "/",
+    sameSite: "strict" as const,
+    secure: secureCookieForProtocol(getRequestProtocol(event)),
+  };
+}
+
+export function browserCookieNames(event: H3Event) {
+  const prefix = browserCookieOptions(event).secure ? "__Host-" : "";
+  return {
+    session: `${prefix}tws_session`,
+    csrf: `${prefix}tws_csrf`,
+  };
 }
 
 export function setBrowserSessionCookies(
@@ -18,14 +34,14 @@ export function setBrowserSessionCookies(
   sessionToken: string,
   csrfToken: string,
 ): void {
-  assertLoopbackRequest(event);
-  const options = { path: "/", sameSite: "strict" as const, secure: false };
-  setCookie(event, sessionCookieName, sessionToken, {
+  const options = browserCookieOptions(event);
+  const names = browserCookieNames(event);
+  setCookie(event, names.session, sessionToken, {
     ...options,
     httpOnly: true,
     maxAge: sessionMaxAge,
   });
-  setCookie(event, csrfCookieName, csrfToken, {
+  setCookie(event, names.csrf, csrfToken, {
     ...options,
     httpOnly: false,
     maxAge: sessionMaxAge,
@@ -33,13 +49,15 @@ export function setBrowserSessionCookies(
 }
 
 export function clearBrowserSessionCookies(event: H3Event): void {
-  const options = { path: "/", sameSite: "strict" as const, secure: false };
-  deleteCookie(event, sessionCookieName, options);
-  deleteCookie(event, csrfCookieName, options);
+  const options = browserCookieOptions(event);
+  const names = browserCookieNames(event);
+  deleteCookie(event, names.session, options);
+  deleteCookie(event, names.csrf, options);
 }
 
 export function sameOrigin(event: H3Event): boolean {
-  const origin = getRequestHeader(event, "origin");
-  if (!origin) return false;
-  return origin === getRequestURL(event).origin && localHost(event);
+  return originsMatch(
+    getRequestURL(event).origin,
+    getRequestHeader(event, "origin"),
+  );
 }

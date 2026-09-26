@@ -1,15 +1,13 @@
 import { currentAuth } from "../../auth/context.ts";
+import { currentUserProfile } from "../../db/responsible-subjects.ts";
+import { withDatabase } from "../../db/pool.ts";
 import { apiResponse } from "../../utils/api.ts";
 
 export default defineEventHandler((event) =>
   apiResponse(event, async () => {
     const auth = currentAuth(event);
-    return {
-      id: auth.userId,
-      username: auth.username,
-      name: auth.name,
-      role: auth.role,
-      mustChangePassword: auth.mustChangePassword,
-    };
+    return withDatabase(useRuntimeConfig(event).mysql, (connection) =>
+      currentUserProfile(connection, auth),
+    );
   }),
 );

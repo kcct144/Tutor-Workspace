@@ -7,4 +7,11 @@ export interface CurrentUser {
   name: string;
   role: AuthRole;
   mustChangePassword: boolean;
+  responsibleSubjects: string[];
+  version: number;
+}
+
+export interface ResponsibleSubjectsUpdate {
+  subjects: string[];
+  expectedVersion: number;
 }

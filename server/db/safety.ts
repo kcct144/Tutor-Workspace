@@ -87,6 +87,11 @@ export function parseTaskPlanProgressMigration(sql: string): string[] {
   );
 }
 
+/** This slice permits only the user-to-subject responsibility relation. */
+export function parseUserResponsibleSubjectsMigration(sql: string): string[] {
+  return parseMigration(sql, ["user_responsible_subjects"], ["users"]);
+}
+
 /** S10 extends only the audit entity CHECK for attendance writes. */
 export function parseAuditAttendanceRecordMigration(sql: string): string[] {
   return parseExactMigration(

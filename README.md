@@ -1,6 +1,6 @@
 # 学管师工作台
 
-Nuxt + Ant Design Vue + MySQL 的本机学管工作台。已包含学生、合同、学习记录、学习计划、任务定义、任务分配、首页聚合，以及网页登录、会话、CSRF 和 API 鉴权。
+Nuxt + Ant Design Vue + MySQL 学管工作台。已包含学生、合同、学习记录、学习计划、任务定义、任务分配、首页聚合，以及网页登录、会话、CSRF 和 API 鉴权。应用支持通过主机名、内网 IP 或公网域名部署。
 
 ## 前置依赖
 
@@ -44,6 +44,20 @@ pnpm db:init-admin -- --apply --confirm
 ```
 
 `pnpm db:init-admin -- --apply --confirm` 仅允许本机交互式终端运行；它先验证批准库，并在没有启用管理员时以隐藏输入创建或绑定初始管理员。不会接受密码命令参数或自动执行。
+
+## 云服务器启动
+
+构建后可直接监听服务器网络端口：
+
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+NITRO_HOST=0.0.0.0 NITRO_PORT=3000 node .output/server/index.mjs
+```
+
+应用不再限制请求必须来自 `localhost`。网页登录、会话、权限和同源 CSRF 校验仍然生效。HTTP 环境使用普通 Cookie；HTTPS 环境根据请求协议自动使用 `Secure` 与 `__Host-` Cookie。使用 HTTPS 反向代理时应保留原始 `Host`，并正确传递 `X-Forwarded-Proto`。
+
+直接暴露 HTTP 端口虽然可运行，但账号密码和业务数据没有传输加密。正式使用仍建议由 Nginx、Caddy 或云负载均衡提供 HTTPS，并只向外开放代理端口。
 
 ## 数据库与业务边界
 

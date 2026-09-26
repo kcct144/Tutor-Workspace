@@ -1,11 +1,12 @@
 import type { Connection, RowDataPacket } from "mysql2/promise";
 import type { HomeQuery, HomePage, HomeStudent } from "../../types/api/home.ts";
-import { shanghaiToday } from "./contracts-rules.ts";
+import { contractStatusSql, shanghaiToday } from "./contracts-rules.ts";
 import { studentContractAggregates } from "./contracts.ts";
 import { studentPlanTags } from "./study-plans.ts";
 import { homeTaskData } from "./home-activities.ts";
 import type { AuthContext } from "../auth/context.ts";
 import { studentTagMap } from "./student-tags.ts";
+import { responsibleSubjectsForUser } from "./responsible-subjects.ts";
 export async function listHome(
   db: Connection,
   query: HomeQuery & { page: number; pageSize: number },
@@ -16,21 +17,52 @@ export async function listHome(
     " WHERE status='在读'" +
     (auth.role === "admin" ? "" : " AND owner_user_id=?");
   const scopeValues = auth.role === "admin" ? [] : [auth.userId];
+  const [active] = await db.execute<RowDataPacket[]>(
+    "SELECT COUNT(*) AS total FROM students" + scope + " LIMIT 1",
+    scopeValues,
+  );
+  const subjectMode = query.subjectMode ?? "responsible";
+  const subjects =
+    subjectMode === "responsible"
+      ? await responsibleSubjectsForUser(db, auth.userId)
+      : subjectMode === "selected"
+        ? (query.subject ?? [])
+        : [];
+  const subjectConfigurationRequired =
+    subjectMode === "responsible" && subjects.length === 0;
+  if (subjectConfigurationRequired)
+    return {
+      items: [],
+      total: 0,
+      page: query.page,
+      pageSize: query.pageSize,
+      activeStudents: Number(active[0]!.total),
+      asOfDate: today,
+      subjectConfigurationRequired: true,
+    };
+  const subjectFilter = subjects.length
+    ? " AND EXISTS (SELECT 1 FROM contracts c WHERE c.student_id=students.id AND c.subject COLLATE utf8mb4_0900_bin IN (" +
+      subjects.map(() => "?").join(",") +
+      ") AND ((" +
+      contractStatusSql +
+      ")='生效中' OR (" +
+      contractStatusSql +
+      ")='进行中'))"
+    : "";
   const where =
     scope +
     (query.grade ? " AND grade=?" : "") +
     (query.tag
       ? " AND EXISTS (SELECT 1 FROM student_tags st WHERE st.student_id=students.id AND st.tag=?)"
-      : "");
+      : "") +
+    subjectFilter;
   const values = [
     ...scopeValues,
     ...(query.grade ? [query.grade] : []),
     ...(query.tag ? [query.tag] : []),
+    ...subjects,
+    ...(subjects.length ? [today, today, today, today] : []),
   ];
-  const [active] = await db.execute<RowDataPacket[]>(
-    "SELECT COUNT(*) AS total FROM students" + scope + " LIMIT 1",
-    scopeValues,
-  );
   const [counts] = await db.execute<RowDataPacket[]>(
     "SELECT COUNT(*) AS total FROM students" + where + " LIMIT 1",
     values,
@@ -85,5 +117,6 @@ export async function listHome(
     pageSize: query.pageSize,
     activeStudents: Number(active[0]!.total),
     asOfDate: today,
+    subjectConfigurationRequired: false,
   };
 }

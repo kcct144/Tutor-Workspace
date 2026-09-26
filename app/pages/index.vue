@@ -7,6 +7,7 @@ const {
   items,
   total,
   activeStudents,
+  subjectConfigurationRequired,
   loading,
   error,
   refresh,
@@ -15,12 +16,32 @@ const {
   message,
   pendingIds,
   notice,
+  useResponsibleSubjects,
+  useAllSubjects,
+  settingsOpen,
+  responsibleSubjects,
 } = useHome();
 const grades = ["全部", ...studentGrades];
 const selectedGrade = computed<string>({
   get: () => query.value.grade ?? "全部",
   set: (value: string) => {
     query.value.grade = value === "全部" ? undefined : (value as StudentGrade);
+  },
+});
+const selectedSubjects = computed<string[]>({
+  get: () =>
+    query.value.subjectMode === "responsible"
+      ? responsibleSubjects.value
+      : query.value.subjectMode === "selected"
+        ? (query.value.subject ?? [])
+        : [],
+  set: (subjects) => {
+    query.value = {
+      ...query.value,
+      page: 1,
+      subjectMode: subjects.length ? "selected" : "all",
+      subject: subjects.length ? subjects : undefined,
+    };
   },
 });
 </script>
@@ -33,6 +54,15 @@ const selectedGrade = computed<string>({
         </h1>
       </div>
       <div class="intro-actions">
+        <SubjectMultiSelect
+          v-model="selectedSubjects"
+          class="home-subject-filter"
+          placeholder="全部科目"
+          aria-label="首页科目筛选"
+        />
+        <AButton class="action-button" @click="useResponsibleSubjects"
+          >恢复我的负责科目</AButton
+        >
         <RemoteSelect
           v-model="query.tag"
           :loader="loadStudentTagOptions"
@@ -73,6 +103,23 @@ const selectedGrade = computed<string>({
       <span class="prototype-note">在读学生 · 待办与最新动态</span>
     </div>
     <p v-if="notice" role="status">{{ notice }}</p>
+    <AAlert
+      v-if="subjectConfigurationRequired && !loading && !error"
+      type="info"
+      show-icon
+      message="尚未配置负责学科"
+      description="请先在个人设置中配置负责学科，或清空科目筛选查看权限范围内的全部学生。"
+      class="subject-configuration-alert"
+    >
+      <template #action>
+        <div class="subject-configuration-actions">
+          <AButton size="small" @click="useAllSubjects">查看全部科目</AButton>
+          <AButton size="small" @click="settingsOpen = true"
+            >打开个人设置</AButton
+          >
+        </div>
+      </template>
+    </AAlert>
     <ASkeleton v-if="loading" active aria-label="正在加载首页学生" />
     <AAlert v-else-if="error" type="error" :message="error" show-icon
       ><template #action
@@ -88,7 +135,15 @@ const selectedGrade = computed<string>({
         @change="change"
       />
     </div>
-    <AEmpty v-else description="暂无符合条件的在读学生" class="empty-state" />
+    <AEmpty
+      v-else
+      :description="
+        subjectConfigurationRequired
+          ? '配置负责学科后显示默认学生视图'
+          : '暂无符合条件的在读学生'
+      "
+      class="empty-state"
+    />
     <APagination
       v-if="!loading && !error && total > 0"
       v-model:current="query.page"
@@ -107,6 +162,18 @@ const selectedGrade = computed<string>({
   flex-wrap: wrap;
   min-width: 0;
 }
+.home-subject-filter {
+  width: 220px;
+  max-width: 100%;
+}
+.subject-configuration-alert {
+  margin-bottom: 16px;
+}
+.subject-configuration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
 .filter-pills {
   min-width: 0;
   max-width: 100%;
@@ -121,6 +188,9 @@ const selectedGrade = computed<string>({
     align-items: stretch;
   }
   .intro-actions {
+    width: 100%;
+  }
+  .home-subject-filter {
     width: 100%;
   }
   .toolbar-line {

@@ -102,6 +102,7 @@ describe("S6 input and data rules", () => {
       page: 1,
       pageSize: 20,
       grade: "初一",
+      subjectMode: "responsible",
     });
     expect(() => parseHomeQuery({ status: "在读" })).toThrow();
   });
@@ -229,7 +230,7 @@ describe("S6 input and data rules", () => {
       .mockResolvedValueOnce([[]]);
     const result = await listHome(
       { execute } as unknown as Connection,
-      { page: 1, pageSize: 20, grade: "高二" },
+      { page: 1, pageSize: 20, grade: "高二", subjectMode: "all" },
       { role: "admin", userId: "1" },
       today,
     );

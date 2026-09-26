@@ -79,7 +79,13 @@ describe("S12 home activities", () => {
       .mockResolvedValueOnce([[]]);
     const page = await listHome(
       { execute } as never,
-      { page: 2, pageSize: 20, grade: "初一", tag: "跟进" },
+      {
+        page: 2,
+        pageSize: 20,
+        grade: "初一",
+        tag: "跟进",
+        subjectMode: "all",
+      },
       { role: "advisor", userId: "99" },
     );
     expect(page).toMatchObject({ activeStudents: 4, total: 0, items: [] });

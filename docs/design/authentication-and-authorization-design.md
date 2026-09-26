@@ -3,7 +3,7 @@
 - 状态：已确认
 - 负责人：产品经理兼技术设计负责人
 - 创建日期：2026-09-07
-- 最后更新日期：2026-09-07
+- 最后更新日期：2026-09-14
 - 关联需求：登录验证、账号管理、学生归属权限、操作审计、现有 API 鉴权改造
 
 ## 1. 设计结论
@@ -14,11 +14,12 @@ S8 推荐采用以下最小架构：
 - 浏览器使用 MySQL 持久化的不透明会话和 HttpOnly Cookie，不使用 JWT 或 localStorage。
 - 角色固定为 `admin`、`advisor`，权限由服务端代码中的明确策略实现，不建动态 RBAC 表。
 - 管理员拥有全局数据范围；学管师的数据范围由 `students.owner_user_id = 当前用户 ID` 决定。
+- 两种角色均是学管师身份；`admin` 仅附加管理能力。新增负责学科关系只影响首页默认筛选，不参与授权范围判断。
 - 所有业务 API 默认需要身份；公开白名单只有登录和最小健康检查。
 - 当前用户 ID 从会话得到；浏览器不能声明操作人。
 - 关键业务写入和审计插入处于同一 MySQL 事务；审计只记录脱敏差异。
 
-该架构适配当前 Nuxt SPA + Nitro API + MySQL 连接池。登录模块不会放宽回环地址限制，也不构成公网部署批准。
+该架构适配当前 Nuxt SPA + Nitro API + MySQL 连接池。应用允许通过主机名、内网 IP 或公网域名访问；部署安全由登录会话、权限、同源 CSRF、HTTPS 和入口层策略共同承担。
 
 ## 2. 现状与兼容边界
 
@@ -101,10 +102,10 @@ AuthContext {
 
 ### 4.3 Cookie 属性
 
-| 环境                | Cookie 名称与属性                                                                                                         |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| 当前本机 HTTP 开发  | `tws_session`；HttpOnly、SameSite=Strict、Path=/、无 Domain、Secure=false；仅当 Host 为 `127.0.0.1` 或 `localhost` 时允许 |
-| HTTPS 验收/真实试用 | `__Host-tws_session`；Secure、HttpOnly、SameSite=Strict、Path=/、无 Domain                                                |
+| 环境  | Cookie 名称与属性                                                          |
+| ----- | -------------------------------------------------------------------------- |
+| HTTP  | `tws_session`；HttpOnly、SameSite=Strict、Path=/、无 Domain、Secure=false  |
+| HTTPS | `__Host-tws_session`；Secure、HttpOnly、SameSite=Strict、Path=/、无 Domain |
 
 会话绝对有效期 7 天，空闲有效期 8 小时，不提供“记住我”。服务端使用 UTC 时间判定，Cookie Max-Age 不得超过绝对期限。`last_seen_at` 最多每 5 分钟更新一次，避免每次读取都写数据库。
 
@@ -113,7 +114,7 @@ AuthContext {
 - 登录时另生成至少 16 字节随机 CSRF Token，把摘要绑定到 `auth_sessions.csrf_token_hash`。
 - 明文放入可读的 `tws_csrf` Cookie，使用 SameSite=Strict、Path=/、无 Domain；HTTPS 时设置 Secure。它不是身份凭据。
 - 所有 POST/PATCH/DELETE 请求必须同时满足精确同源 `Origin` 校验，并携带 `X-CSRF-Token`，其摘要与当前会话记录一致。
-- 登录接口没有现有会话，但仍要求 Origin/Host 是批准的同源回环地址；不接受跨域请求。
+- 登录接口没有现有会话，但仍要求 `Origin` 与当前请求来源精确同源；不接受跨域请求。
 - Token 轮换、退出和会话撤销时同时清除两个 Cookie。Token 不写入 localStorage/sessionStorage。
 
 ### 4.5 撤销与清理
@@ -145,7 +146,7 @@ AuthContext {
 
 账号级失败窗口存入 `user_accounts`：15 分钟内累计 5 次失败后 `locked_until` 设置为服务端时间 +15 分钟。登录成功清零。不存在账号、密码错误、停用和锁定均返回相同 401 code/msg；服务端不得在响应中回显剩余次数。
 
-当前仍仅允许回环访问，因此不增加 IP 分布式限流或 CAPTCHA。若以后允许网络访问，必须在部署评审中补充入口层速率限制和 HTTPS。
+应用不再限制回环访问。当前仍未内置分布式登录限流或 CAPTCHA；公网部署应由入口层配置 HTTPS、访问日志和登录速率限制。
 
 ## 6. 数据模型
 
@@ -397,7 +398,25 @@ user_account.password_change
 5. **S8.5 关联业务权限**：合同、记录、计划、任务定义、任务分配的范围过滤与批量原子校验。
 6. **S8.6 审计闭环**：各写服务同事务审计、管理员审计列表与敏感字段测试。
 
+## 2026-09-14：学管师负责学科与工作台默认视图（已实现）
+
+新增 `020_user_responsible_subjects.sql`，仅创建 `user_responsible_subjects`：
+
+| 字段         | 类型与约束                                        | 说明                                                       |
+| ------------ | ------------------------------------------------- | ---------------------------------------------------------- |
+| `user_id`    | BIGINT UNSIGNED NOT NULL，FK `users.id` RESTRICT  | 学管师身份；请求仍须确认存在启用账号                       |
+| `subject`    | VARCHAR(64) NOT NULL                              | 复用统一 Subject 的 trim、Unicode 长度、非空和精确去重规则 |
+| `created_at` | DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) | 建立时间                                                   |
+
+主键为 `(user_id, subject)`，附加索引 `(subject, user_id)`；不建科目主数据表、不存学生 ID、不存职责状态或历史。负责学科可为空，不能使用数据库或迁移擅自给现有账号写入“英语”。
+
+`GET /api/auth/me` 扩展 `responsibleSubjects:string[]` 与账号 `version`。新增仅限本人的 `PATCH /api/auth/me/responsible-subjects`，请求为 `{subjects:string[], expectedVersion:number}`，允许空数组、上限 10；同一事务锁定 `user_accounts`、校验账号启用和版本、替换关系、递增 `user_accounts.version`，并以 `user_account.responsible_subjects.update` 写入既有 `audit_logs` 的 `user_account` 实体。冲突返回既有 409，保留前端草稿。
+
+首页查询增加 `subjectMode=responsible|selected|all` 与重复 `subject` 参数：省略 mode 按 `responsible` 处理；`selected` 接受 1–10 个已规范化科目；`all` 不加科目谓词。所有模式都先应用现有角色/负责人范围、在读状态、年级和标签，再以参数化 `EXISTS` 命中有效合同科目。多个科目为 OR，筛选与范围条件为 AND。无负责学科的 `responsible` 模式返回空页和 `subjectConfigurationRequired:true`，不降级为全量或英语。
+
 每个切片必须迁移/API/前端/测试形成可验证闭环；在 S8.2 开始保护 API 前，S8.1 的管理员账号必须已建立并验证，避免把本机操作者锁在系统外。
+
+实现文件为 `020_user_responsible_subjects.sql`、`server/db/responsible-subjects.ts`、本人设置 API、Header 设置抽屉与首页组合筛选。迁移器对表字段、复合主键、反向索引及 RESTRICT 外键作登记后结构复核；不会为既有账号自动插入负责学科。
 
 ## 15. 已确认的实施边界
 

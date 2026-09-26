@@ -42,14 +42,16 @@ function responseData<T>(
 
 function csrfToken(): string | undefined {
   if (!import.meta.client) return undefined;
-  const entry = document.cookie
-    .split("; ")
-    .find((value) => value.startsWith("tws_csrf="));
-  return entry?.slice("tws_csrf=".length);
+  const cookies = document.cookie.split("; ");
+  for (const name of ["__Host-tws_csrf", "tws_csrf"]) {
+    const entry = cookies.find((value) => value.startsWith(`${name}=`));
+    if (entry) return entry.slice(name.length + 1);
+  }
+  return undefined;
 }
 export async function apiGet<T>(
   url: string,
-  query: Record<string, string | number | undefined>,
+  query: Record<string, string | number | readonly string[] | undefined>,
   signal?: AbortSignal,
 ): Promise<T> {
   const response = await $fetch.raw<ApiResponse<T>>(url, {

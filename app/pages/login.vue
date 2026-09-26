@@ -41,7 +41,7 @@ async function submit() {
       <div class="login-brand" aria-hidden="true">学</div>
       <p class="eyebrow">TUTOR WORKSPACE</p>
       <h1 id="login-title">登录学管师工作台</h1>
-      <p>仅限本机受控环境使用。</p>
+      <p>请使用可信设备和受保护的网络登录。</p>
       <form class="login-form" @submit.prevent="submit">
         <label>
           <span>账号</span>

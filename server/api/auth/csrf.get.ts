@@ -1,5 +1,8 @@
 import { currentAuth } from "../../auth/context.ts";
-import { csrfCookieName } from "../../auth/cookies.ts";
+import {
+  browserCookieNames,
+  browserCookieOptions,
+} from "../../auth/cookies.ts";
 import { rotateSessionCsrf } from "../../db/auth-sessions.ts";
 import { withDatabase } from "../../db/pool.ts";
 import { apiResponse } from "../../utils/api.ts";
@@ -10,10 +13,8 @@ export default defineEventHandler((event) =>
     const csrfToken = await withDatabase(useRuntimeConfig(event).mysql, (db) =>
       rotateSessionCsrf(db, auth.sessionId),
     );
-    setCookie(event, csrfCookieName, csrfToken, {
-      path: "/",
-      sameSite: "strict",
-      secure: false,
+    setCookie(event, browserCookieNames(event).csrf, csrfToken, {
+      ...browserCookieOptions(event),
       httpOnly: false,
       maxAge: 7 * 24 * 60 * 60,
     });

@@ -1,4 +1,4 @@
-import { ref, watch, onScopeDispose } from "vue";
+import { computed, ref, watch, onScopeDispose } from "vue";
 import type { HomeQuery, HomeStudent } from "../../types/api/home";
 import { getHome } from "~/services/task-assignments";
 import { ServiceError } from "~/services/http";
@@ -7,13 +7,19 @@ import { useStudentInvalidation } from "./useStudentInvalidation";
 import { useAssignmentCompletion } from "./useAssignmentCompletion";
 
 export function useHome() {
-  const query = ref<HomeQuery>({ page: 1, pageSize: 20 }),
+  const auth = useAuth();
+  const query = ref<HomeQuery>({
+      page: 1,
+      pageSize: 20,
+      subjectMode: "responsible",
+    }),
     items = ref<HomeStudent[]>([]),
     total = ref(0),
     activeStudents = ref(0),
     loading = ref(false),
     error = ref(""),
-    message = ref("");
+    message = ref(""),
+    subjectConfigurationRequired = ref(false);
   let controller: AbortController | undefined,
     timer: ReturnType<typeof setTimeout> | undefined;
   async function refresh() {
@@ -29,6 +35,7 @@ export function useHome() {
         items.value = page.items;
         total.value = page.total;
         activeStudents.value = page.activeStudents;
+        subjectConfigurationRequired.value = page.subjectConfigurationRequired;
       }
     } catch (cause) {
       if (!request.signal.aborted)
@@ -41,10 +48,24 @@ export function useHome() {
     }
   }
   watch(
-    () => [query.value.grade, query.value.tag],
+    () => [
+      query.value.grade,
+      query.value.tag,
+      query.value.subjectMode,
+      JSON.stringify(query.value.subject ?? []),
+    ],
     () => {
       if (query.value.page !== 1) query.value.page = 1;
       else void refresh();
+    },
+  );
+  watch(
+    () => auth.user.value?.version,
+    () => {
+      if (query.value.subjectMode === "responsible") {
+        if (query.value.page !== 1) query.value.page = 1;
+        else void refresh();
+      }
     },
   );
   watch(
@@ -67,6 +88,22 @@ export function useHome() {
     clearTimeout(timer);
     timer = setTimeout(() => (message.value = ""), 2200);
   }
+  function useResponsibleSubjects() {
+    query.value = {
+      ...query.value,
+      page: 1,
+      subjectMode: "responsible",
+      subject: undefined,
+    };
+  }
+  function useAllSubjects() {
+    query.value = {
+      ...query.value,
+      page: 1,
+      subjectMode: "all",
+      subject: undefined,
+    };
+  }
   useTaskInvalidation(refresh, "home");
   useStudentInvalidation(refresh);
   onScopeDispose(() => {
@@ -78,12 +115,19 @@ export function useHome() {
     items,
     total,
     activeStudents,
+    subjectConfigurationRequired,
     loading,
     error,
     refresh,
     change,
     showMessage,
     message,
+    useResponsibleSubjects,
+    useAllSubjects,
+    settingsOpen: auth.settingsOpen,
+    responsibleSubjects: computed(
+      () => auth.user.value?.responsibleSubjects ?? [],
+    ),
     ...completion,
   };
 }

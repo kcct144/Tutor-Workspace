@@ -16,6 +16,7 @@ import {
   parseAuditAttendanceRecordMigration,
   parseExpandedStudentGradesMigration,
   parseTaskPlanProgressMigration,
+  parseUserResponsibleSubjectsMigration,
 } from "../server/db/safety.ts";
 import { checkStudentVersion } from "./student-version.mjs";
 
@@ -85,6 +86,11 @@ const manifest = [
     tables: ["student_tags"],
     references: ["students"],
   },
+  {
+    version: "020_user_responsible_subjects",
+    tables: ["user_responsible_subjects"],
+    references: ["users"],
+  },
 ];
 
 function parseApprovedMigration(version, sql, tables, references) {
@@ -109,7 +115,60 @@ function parseApprovedMigration(version, sql, tables, references) {
     return parseExpandedStudentGradesMigration(sql);
   if (version === "018_task_plan_progress")
     return parseTaskPlanProgressMigration(sql);
+  if (version === "020_user_responsible_subjects")
+    return parseUserResponsibleSubjectsMigration(sql);
   return parseMigration(sql, tables, references);
+}
+
+async function checkUserResponsibleSubjectsStructure(connection, applied) {
+  await assertApprovedDatabase(connection);
+  const [columns] = await connection.execute(
+    "SELECT COLUMN_NAME,IS_NULLABLE,CHARACTER_MAXIMUM_LENGTH,COLLATION_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? ORDER BY ORDINAL_POSITION LIMIT 4",
+    ["user_responsible_subjects"],
+  );
+  const [indexes] = await connection.execute(
+    "SELECT INDEX_NAME,SEQ_IN_INDEX,COLUMN_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? ORDER BY INDEX_NAME,SEQ_IN_INDEX LIMIT 6",
+    ["user_responsible_subjects"],
+  );
+  const [foreignKeys] = await connection.execute(
+    "SELECT REFERENCED_TABLE_NAME,DELETE_RULE,UPDATE_RULE FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() AND TABLE_NAME=? AND CONSTRAINT_NAME=? LIMIT 1",
+    ["user_responsible_subjects", "fk_user_responsible_subjects_user"],
+  );
+  const [checks] = await connection.execute(
+    "SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND CONSTRAINT_NAME=? AND CONSTRAINT_TYPE='CHECK' LIMIT 1",
+    ["user_responsible_subjects", "chk_user_responsible_subjects_name"],
+  );
+  if (!applied) {
+    if (columns.length || indexes.length || foreignKeys.length || checks.length)
+      throw new Error("发现未登记的负责学科DDL，停止人工核对。");
+    return;
+  }
+  const names = columns.map((row) => String(row.COLUMN_NAME));
+  const primary = indexes
+    .filter((row) => row.INDEX_NAME === "PRIMARY")
+    .map((row) => String(row.COLUMN_NAME));
+  const reverse = indexes
+    .filter(
+      (row) => row.INDEX_NAME === "idx_user_responsible_subjects_subject_user",
+    )
+    .map((row) => String(row.COLUMN_NAME));
+  if (
+    names.join(",") !== "user_id,subject,created_at" ||
+    columns.some((row) => row.IS_NULLABLE !== "NO") ||
+    Number(
+      columns.find((row) => row.COLUMN_NAME === "subject")
+        ?.CHARACTER_MAXIMUM_LENGTH,
+    ) !== 64 ||
+    columns.find((row) => row.COLUMN_NAME === "subject")?.COLLATION_NAME !==
+      "utf8mb4_0900_bin" ||
+    primary.join(",") !== "user_id,subject" ||
+    reverse.join(",") !== "subject,user_id" ||
+    foreignKeys[0]?.REFERENCED_TABLE_NAME !== "users" ||
+    foreignKeys[0]?.DELETE_RULE !== "RESTRICT" ||
+    foreignKeys[0]?.UPDATE_RULE !== "RESTRICT" ||
+    checks.length !== 1
+  )
+    throw new Error("负责学科结构不符合批准定义。");
 }
 
 async function checkAuthorizationAuditIndex(connection, applied) {
@@ -437,6 +496,8 @@ await runDatabaseCommand(async (connection) => {
             await checkExpandedStudentGradesStructure(connection, true);
           if (migration.version === "018_task_plan_progress")
             await checkTaskPlanProgressStructure(connection, true);
+          if (migration.version === "020_user_responsible_subjects")
+            await checkUserResponsibleSubjectsStructure(connection, true);
           console.log(migration.version + " 已应用，跳过。");
           continue;
         }
@@ -480,6 +541,8 @@ await runDatabaseCommand(async (connection) => {
         await checkExpandedStudentGradesStructure(connection, false);
       if (migration.version === "018_task_plan_progress")
         await checkTaskPlanProgressStructure(connection, false);
+      if (migration.version === "020_user_responsible_subjects")
+        await checkUserResponsibleSubjectsStructure(connection, false);
       for (const statement of migration.statements) {
         await assertApprovedDatabase(connection);
         await connection.query(statement);
@@ -504,6 +567,8 @@ await runDatabaseCommand(async (connection) => {
         await checkExpandedStudentGradesStructure(connection, true);
       if (migration.version === "018_task_plan_progress")
         await checkTaskPlanProgressStructure(connection, true);
+      if (migration.version === "020_user_responsible_subjects")
+        await checkUserResponsibleSubjectsStructure(connection, true);
       await assertApprovedDatabase(connection);
       await connection.execute(
         "INSERT INTO schema_migrations (version, checksum) VALUES (?, ?)",

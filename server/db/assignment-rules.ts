@@ -15,6 +15,7 @@ import type {
 } from "../../types/api/task-assignments.ts";
 import type { HomeQuery } from "../../types/api/home.ts";
 import { normalizeStudentTag } from "../../types/api/student-tags.ts";
+import { normalizeResponsibleSubjects } from "./responsible-subjects.ts";
 function invalid(message = "任务分配参数无效。"): never {
   throw new ApiError(400, "VALIDATION_ERROR", message);
 }
@@ -120,7 +121,14 @@ export function assignmentDueState(
 export function parseHomeQuery(
   value: Record<string, unknown>,
 ): HomeQuery & { page: number; pageSize: number } {
-  const input = fields(value, ["page", "pageSize", "grade", "tag"]);
+  const input = fields(value, [
+    "page",
+    "pageSize",
+    "grade",
+    "tag",
+    "subjectMode",
+    "subject",
+  ]);
   const query = parseStudentQuery({
     page: input.page,
     pageSize: input.pageSize ?? "20",
@@ -134,10 +142,28 @@ export function parseHomeQuery(
       throw new ApiError(400, "VALIDATION_ERROR", "标签筛选无效。");
     }
   }
+  const subjectMode = input.subjectMode ?? "responsible";
+  if (!["responsible", "selected", "all"].includes(String(subjectMode)))
+    invalid("科目筛选模式无效。");
+  const rawSubjects =
+    input.subject === undefined
+      ? []
+      : Array.isArray(input.subject)
+        ? input.subject
+        : [input.subject];
+  let subjects: string[] = [];
+  if (subjectMode === "selected") {
+    subjects = normalizeResponsibleSubjects(rawSubjects);
+    if (!subjects.length) invalid("手动科目筛选至少选择一个科目。");
+  } else if (rawSubjects.length) {
+    invalid("当前科目筛选模式不接受手动科目。");
+  }
   return {
     page: query.page,
     pageSize: query.pageSize,
     grade: query.grade,
     ...(tag === undefined ? {} : { tag }),
+    subjectMode: subjectMode as HomeQuery["subjectMode"],
+    ...(subjects.length ? { subject: subjects } : {}),
   };
 }

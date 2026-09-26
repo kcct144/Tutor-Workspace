@@ -1,10 +1,8 @@
 import { currentAuth, type AuthContext } from "../auth/context.ts";
 import {
-  assertLoopbackRequest,
+  browserCookieNames,
   clearBrowserSessionCookies,
-  csrfCookieName,
   sameOrigin,
-  sessionCookieName,
 } from "../auth/cookies.ts";
 import {
   findActiveBrowserSession,
@@ -26,14 +24,10 @@ function writeMethod(method: string): boolean {
 
 export default defineEventHandler(async (event) => {
   if (!event.path.startsWith("/api/")) return;
-  try {
-    assertLoopbackRequest(event);
-  } catch {
-    return apiErrorResponse(event, 403, "ORIGIN_INVALID", "仅允许本机访问。");
-  }
   if (publicApi(event.path, event.method)) return;
 
-  const token = getCookie(event, sessionCookieName);
+  const cookieNames = browserCookieNames(event);
+  const token = getCookie(event, cookieNames.session);
   let session;
   try {
     session = await withDatabase(useRuntimeConfig(event).mysql, (connection) =>
@@ -68,7 +62,7 @@ export default defineEventHandler(async (event) => {
   if (!writeMethod(event.method)) return;
   if (
     !sameOrigin(event) ||
-    !sessionCsrfMatches(session, getCookie(event, csrfCookieName))
+    !sessionCsrfMatches(session, getCookie(event, cookieNames.csrf))
   )
     return apiErrorResponse(
       event,

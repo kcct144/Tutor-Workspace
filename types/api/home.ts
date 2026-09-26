@@ -17,6 +17,8 @@ export interface HomeQuery {
   pageSize?: number;
   grade?: StudentGrade;
   tag?: string;
+  subjectMode?: "responsible" | "selected" | "all";
+  subject?: string[];
 }
 export interface HomeStudent {
   tags: string[];
@@ -37,4 +39,5 @@ export interface HomeStudent {
 export interface HomePage extends Page<HomeStudent> {
   activeStudents: number;
   asOfDate: string;
+  subjectConfigurationRequired: boolean;
 }

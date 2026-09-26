@@ -1,5 +1,5 @@
-import { effectScope, nextTick } from "vue";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { effectScope, nextTick, ref } from "vue";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { useAssignments } from "../../app/composables/useAssignments";
 import { useAssignmentCreate } from "../../app/composables/useAssignmentCreate";
 import { useHome } from "../../app/composables/useHome";
@@ -41,7 +41,16 @@ const flush = async () => {
   await Promise.resolve();
   await nextTick();
 };
-afterEach(() => vi.resetAllMocks());
+beforeEach(() => {
+  vi.stubGlobal("useAuth", () => ({
+    user: ref(null),
+    settingsOpen: ref(false),
+  }));
+});
+afterEach(() => {
+  vi.resetAllMocks();
+  vi.unstubAllGlobals();
+});
 describe("S6 shared state", () => {
   it("list filters reset page; detail student stays authoritative; stale response ignored", async () => {
     let resolve!: (value: typeof page) => void;

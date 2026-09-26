@@ -1,4 +1,4 @@
-import { effectScope, nextTick } from "vue";
+import { effectScope, nextTick, ref } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useContracts } from "../../app/composables/useContracts";
 import { useAssignments } from "../../app/composables/useAssignments";
@@ -33,6 +33,10 @@ describe("S7 student invalidation consumers", () => {
   it("refreshes contract/assignment/home and off-page selected labels without replacing drafts/IDs", async () => {
     const target = new EventTarget();
     vi.stubGlobal("window", target);
+    vi.stubGlobal("useAuth", () => ({
+      user: ref(null),
+      settingsOpen: ref(false),
+    }));
     const page = { items: [], total: 0, page: 1, pageSize: 8 };
     api.getContracts.mockResolvedValue(page);
     api.getAssignments.mockResolvedValue(page);

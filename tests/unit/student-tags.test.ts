@@ -121,6 +121,7 @@ describe("student tags", () => {
       grade: "初一",
       tag: "体验' OR 1=1",
       page: "2",
+      subjectMode: "all",
     });
     expect(
       await listHome({ execute } as never, query, {

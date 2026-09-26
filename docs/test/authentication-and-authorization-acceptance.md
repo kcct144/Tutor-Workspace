@@ -17,7 +17,7 @@
 ### 2.1 环境要求
 
 - 仅在总指挥批准的 `tutor_workspace` 合成环境执行。
-- Nuxt 只监听 `127.0.0.1` 或 `localhost`，不得公网部署。
+- Nuxt 可监听非回环地址；HTTP/HTTPS、主机名和 IP 访问均不得绕过登录、权限与同源 CSRF。
 - 执行迁移或写入前复用数据库预检，禁止输出 `.env`、连接串、密码、Cookie 或 Token。
 - 浏览器验收至少覆盖当前 Chromium 桌面视口和 375px 窄屏。
 - API 验收直接调用服务端接口，不能只依赖页面按钮是否可见。
@@ -85,7 +85,7 @@ S-A、S-B 分别关联至少一份合同、学习记录和任务分配；测试�
 
 | 编号   | 场景           | 预期                                                 |
 | ------ | -------------- | ---------------------------------------------------- |
-| SES-01 | Cookie 属性    | 检查登录响应和浏览器存储                             | session 为 HttpOnly、SameSite=Strict、Path=/、无 Domain；HTTPS 时 Secure + `__Host-` |
+| SES-01 | Cookie 属性    | 分别检查 HTTP 与 HTTPS 登录响应和浏览器存储          | session 为 HttpOnly、SameSite=Strict、Path=/、无 Domain；HTTPS 时 Secure + `__Host-` |
 | SES-02 | 前端读取会话   | 在页面脚本尝试读取 session Cookie                    | 读取不到；localStorage/sessionStorage 无身份 Token                                   |
 | SES-03 | 未登录访问 API | 调用除 login/health 外的 API                         | 401 `UNAUTHENTICATED`，统一 envelope                                                 |
 | SES-04 | 未登录访问页面 | 直接进入 `/students`                                 | 跳转登录并保存安全的站内 redirect                                                    |

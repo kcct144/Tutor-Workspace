@@ -1,5 +1,10 @@
 import { ref } from "vue";
-import { getCurrentUser, login, logout } from "~/services/auth";
+import {
+  getCurrentUser,
+  login,
+  logout,
+  updateMyResponsibleSubjects,
+} from "~/services/auth";
 import { ServiceError } from "~/services/http";
 import type { CurrentUser } from "../../types/api/auth";
 
@@ -13,6 +18,7 @@ export function safeRedirect(value: unknown): string {
 export function useAuth() {
   const user = useState<CurrentUser | null>("auth:current-user", () => null);
   const checked = useState("auth:checked", () => false);
+  const settingsOpen = useState("auth:settings-open", () => false);
   const checking = ref(false);
 
   async function refresh(): Promise<CurrentUser | null> {
@@ -51,7 +57,25 @@ export function useAuth() {
     }
   }
 
-  return { user, checked, refresh, signIn, signOut };
+  async function saveResponsibleSubjects(subjects: string[]) {
+    if (!user.value) throw new ServiceError("请先登录。", 401);
+    const updated = await updateMyResponsibleSubjects({
+      subjects,
+      expectedVersion: user.value.version,
+    });
+    user.value = updated;
+    return updated;
+  }
+
+  return {
+    user,
+    checked,
+    settingsOpen,
+    refresh,
+    signIn,
+    signOut,
+    saveResponsibleSubjects,
+  };
 }
 
 /** Called by the shared HTTP service after an authenticated API response becomes 401. */

@@ -10,6 +10,10 @@ import {
   validOpaqueToken,
 } from "../../server/db/auth-sessions.ts";
 import { hashPassword } from "../../server/db/auth-rules.ts";
+import {
+  originsMatch,
+  secureCookieForProtocol,
+} from "../../server/auth/cookies.ts";
 
 function approvedQuery() {
   return vi.fn(async () => [[{ current_database: "tutor_workspace" }]]);
@@ -165,6 +169,26 @@ describe("S8.2 opaque-session primitives", () => {
 });
 
 describe("S8.2 global API boundary", () => {
+  it("accepts non-loopback same-origin requests and hardens HTTPS cookies", () => {
+    expect(
+      originsMatch("http://192.0.2.10:3000", "http://192.0.2.10:3000"),
+    ).toBe(true);
+    expect(
+      originsMatch(
+        "https://workspace.example.com",
+        "https://workspace.example.com",
+      ),
+    ).toBe(true);
+    expect(
+      originsMatch("https://workspace.example.com", "https://attacker.example"),
+    ).toBe(false);
+    expect(originsMatch("https://workspace.example.com", undefined)).toBe(
+      false,
+    );
+    expect(secureCookieForProtocol("http")).toBe(false);
+    expect(secureCookieForProtocol("https")).toBe(true);
+  });
+
   it("keeps only login and health public, with server-side CSRF and account checks", () => {
     const middleware = readFileSync("server/middleware/auth.ts", "utf8");
     expect(middleware).toContain(
@@ -178,7 +202,16 @@ describe("S8.2 global API boundary", () => {
     expect(cookies).toContain('sameSite: "strict"');
     expect(cookies).toContain("httpOnly: true");
     expect(cookies).toContain('path: "/"');
+    expect(cookies).toContain(
+      "secureCookieForProtocol(getRequestProtocol(event))",
+    );
+    expect(cookies).toContain(
+      'const prefix = browserCookieOptions(event).secure ? "__Host-" : ""',
+    );
+    expect(cookies).not.toContain("assertLoopbackRequest");
+    expect(cookies).not.toContain("localHost");
     expect(cookies).not.toContain("domain:");
+    expect(middleware).not.toContain("assertLoopbackRequest");
   });
 
   it("replaces every current business write route's DEV_ACTOR identity read", () => {
