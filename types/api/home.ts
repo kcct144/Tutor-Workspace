@@ -1,5 +1,9 @@
 import type { Page, StudentGrade } from "./students";
 import type { TaskAssignment } from "./task-assignments";
+
+/** Home renders all in-scope students in one bounded page without pagination UI. */
+export const homeStudentsPageSize = 1000;
+
 export type HomePendingTask = Pick<
   TaskAssignment,
   "id" | "taskTitle" | "dueDate" | "dueState" | "version" | "status"

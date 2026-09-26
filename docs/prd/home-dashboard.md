@@ -135,4 +135,23 @@ activities: Array<{
 
 交互约束：悬浮浮层仅展示，不改写任务状态，卡片上的待办复选框行为不变。浮层的展开按钮与“＋”按钮都必须阻止事件冒泡，点击后不能同时跳转学生详情；键盘 Enter/Space 进入详情、点击复选框或计划标签不跳转的既有规则保持不变。
 
+### 手机端折叠（2026-09-26）
+
+在 `≤600px` 视口下，学生卡片默认折叠为紧凑行，只显示姓名、7 天内到期标签、年级与科目，以及“N 项待办 · M 条动态”摘要和“点击展开”提示；卡片高度改为自适应，便于在一屏内扫视并定位学生。
+
+- 手机上点击卡片（或聚焦后按 Enter/Space）为展开/收起切换，不再直接跳转学生详情；卡片带有 `aria-expanded` 状态与“展开/收起 + 姓名”的无障碍名称。
+- 展开后才渲染学习计划标签、学生标签、待办任务与最新动态，并在底部提供“查看详情”按钮进入 `/students/:id`；折叠时“＋”快速添加学习记录仍可用。
+- 桌面端（>600px）行为完全不变：卡片固定 510px，点击进入详情，悬浮查看全部任务。
+- 切换视口（`matchMedia` 变化）时按当前断点重新判定；折叠状态为组件本地状态，不写入后端，也不改变权限范围与查询口径。
+
+实现对应：`HomeStudentCard.vue` 使用 `matchMedia("(max-width: 600px)")` 与本地 `expanded` 状态控制 `mobile-collapsed` 类和条件渲染；`openStudent` 在移动端切换展开、桌面端保留原跳转逻辑。验证见 [验收记录](../test/home-card-quick-actions-acceptance.md)。
+
+### 列表不分页与信息紧凑化（2026-09-26）
+
+- 首页移除分页控件；`useHome` 固定单页请求 `page=1`、`pageSize=1000`（`homeStudentsPageSize`），服务端 `parseHomeQuery` 仅在首页放开到该上限（其他查询仍为 100），超上限时接口按既有校验拒绝，不静默截断。
+- 年级与合同科目从独立一行移到姓名旁同一行显示（`姓名 年级 · 科目`），7 天内到期标签仍紧随其后；姓名与年级科目各自单行省略，过长时以 `title` 展示完整内容。
+- 桌面与移动端共用该紧凑头部，进一步降低卡片头部高度，配合移动端折叠方便扫视定位学生。
+
+实现对应：`app/pages/index.vue` 删除 `APagination`；`useHome.ts` 使用共享常量 `homeStudentsPageSize`；`types/api/home.ts` 定义该常量并由 `server/db/assignment-rules.ts` 作为首页 `pageSize` 上限；`HomeStudentCard.vue` 将 `.grade-label` 移入 `<h2>` 并补充省略样式。
+
 实现对应：`useStudentTasks.ts` 按学生读取并拆分待办/已完成；`StudentTasksPopover.vue` 负责悬浮浮层与滚动列表；`QuickRecordDialog.vue` 负责表单与提交；`HomeStudentCard.vue` 触发 `quickRecord` 事件；`pages/index.vue` 持有弹窗状态并在保存后提示。验证记录见 [悬浮任务与快速添加验收](../test/home-card-quick-actions-acceptance.md)。

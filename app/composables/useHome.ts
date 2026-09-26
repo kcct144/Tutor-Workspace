@@ -1,5 +1,9 @@
 import { computed, ref, watch, onScopeDispose } from "vue";
-import type { HomeQuery, HomeStudent } from "../../types/api/home";
+import {
+  homeStudentsPageSize,
+  type HomeQuery,
+  type HomeStudent,
+} from "../../types/api/home";
 import { getHome } from "~/services/task-assignments";
 import { ServiceError } from "~/services/http";
 import { useTaskInvalidation } from "./useTaskInvalidation";
@@ -10,7 +14,7 @@ export function useHome() {
   const auth = useAuth();
   const query = ref<HomeQuery>({
       page: 1,
-      pageSize: 20,
+      pageSize: homeStudentsPageSize,
       subjectMode: "responsible",
     }),
     items = ref<HomeStudent[]>([]),

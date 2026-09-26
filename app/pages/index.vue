@@ -6,7 +6,6 @@ import { loadStudentTagOptions } from "~/services/student-tags";
 const {
   query,
   items,
-  total,
   activeStudents,
   subjectConfigurationRequired,
   loading,
@@ -151,14 +150,6 @@ function beginQuickRecord(student: HomeStudent) {
           : '暂无符合条件的在读学生'
       "
       class="empty-state"
-    />
-    <APagination
-      v-if="!loading && !error && total > 0"
-      v-model:current="query.page"
-      :total="total"
-      :page-size="query.pageSize"
-      :show-size-changer="false"
-      style="margin-top: 20px"
     />
     <Transition name="toast"
       ><div v-if="message" class="toast-message">{{ message }}</div></Transition

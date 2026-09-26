@@ -13,7 +13,7 @@ import type {
   AssignmentStatus,
   DueState,
 } from "../../types/api/task-assignments.ts";
-import type { HomeQuery } from "../../types/api/home.ts";
+import { homeStudentsPageSize, type HomeQuery } from "../../types/api/home.ts";
 import { normalizeStudentTag } from "../../types/api/student-tags.ts";
 import { normalizeResponsibleSubjects } from "./responsible-subjects.ts";
 function invalid(message = "任务分配参数无效。"): never {
@@ -129,11 +129,15 @@ export function parseHomeQuery(
     "subjectMode",
     "subject",
   ]);
-  const query = parseStudentQuery({
-    page: input.page,
-    pageSize: input.pageSize ?? "20",
-    grade: input.grade,
-  });
+  const query = parseStudentQuery(
+    {
+      page: input.page,
+      pageSize: input.pageSize ?? "20",
+      grade: input.grade,
+    },
+    false,
+    homeStudentsPageSize,
+  );
   let tag: string | undefined;
   if (input.tag !== undefined) {
     try {

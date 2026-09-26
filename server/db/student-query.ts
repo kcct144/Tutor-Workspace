@@ -23,13 +23,14 @@ function integer(value: unknown, fallback: number, max: number) {
 export function parseStudentQuery(
   query: Record<string, unknown>,
   options = false,
+  maxPageSize = 100,
 ): Required<Pick<StudentQuery, "page" | "pageSize">> & StudentQuery {
   const allowed = options
     ? ["page", "pageSize", "keyword"]
     : ["page", "pageSize", "keyword", "grade", "status"];
   if (Object.keys(query).some((key) => !allowed.includes(key))) throw invalid();
   const page = integer(query.page, 1, 1000000000);
-  const pageSize = integer(query.pageSize, options ? 20 : 8, 100);
+  const pageSize = integer(query.pageSize, options ? 20 : 8, maxPageSize);
   const keyword =
     query.keyword === undefined ? undefined : text(query.keyword, 64);
   const grade = query.grade === undefined ? undefined : text(query.grade, 16);

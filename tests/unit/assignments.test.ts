@@ -104,6 +104,8 @@ describe("S6 input and data rules", () => {
       grade: "初一",
       subjectMode: "responsible",
     });
+    expect(parseHomeQuery({ pageSize: "1000" }).pageSize).toBe(1000);
+    expect(() => parseHomeQuery({ pageSize: "1001" })).toThrow();
     expect(() => parseHomeQuery({ status: "在读" })).toThrow();
   });
   it("overdue only pending and boundary dates", () => {
