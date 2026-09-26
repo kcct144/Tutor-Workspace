@@ -1,5 +1,6 @@
 # Nuxt dev/build outputs
 .output
+.output.zip
 .data
 .nuxt
 .nitro
@@ -26,6 +27,7 @@ logs
 # Private curriculum imports and one-off database maintenance scripts
 /database/local-seeds/
 /tools/local/
+/tools/*.mjs
 /material/
 
 # Locally generated curriculum documents
