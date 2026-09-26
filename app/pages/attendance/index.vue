@@ -34,7 +34,7 @@ const {
   refresh,
   resetFilters,
   changeStatus,
-  clearScheduled,
+  clearAttendance,
   cellKey,
 } = useAttendance();
 
@@ -44,9 +44,6 @@ const statusOptions = attendanceStatuses.map((value) => ({
   label: attendanceStatusLabels[value],
   symbol: attendanceStatusSymbols[value],
 }));
-const futureStatusOptions = statusOptions.filter(
-  (option) => option.value === "scheduled",
-);
 const clearScheduledOption = {
   value: clearScheduledValue,
   label: "取消排课（恢复无课）",
@@ -204,7 +201,7 @@ function selectStatus(
 ) {
   void finishCell();
   if (value === clearScheduledValue) {
-    void clearScheduled(studentId, date, period);
+    void clearAttendance(studentId, date, period);
     return;
   }
   if (attendanceStatuses.includes(value as AttendanceStatus))
@@ -212,16 +209,11 @@ function selectStatus(
 }
 
 function cellOptions(
-  studentId: string,
-  date: string,
-  period: AttendancePeriod,
+  _studentId: string,
+  _date: string,
+  _period: AttendancePeriod,
 ) {
-  const options = dateMap.value.get(date)?.future
-    ? futureStatusOptions
-    : statusOptions;
-  return cellStatus(studentId, date, period) === "scheduled"
-    ? [...options, clearScheduledOption]
-    : options;
+  return [...statusOptions, clearScheduledOption];
 }
 </script>
 
@@ -418,7 +410,7 @@ function cellOptions(
                   :title="
                     cellTitle(
                       cellKey(record.student.id, String(column.key), period),
-                      `${record.student.name} · ${column.key} · ${attendancePeriodLabels[period]}${dateMap.get(String(column.key))?.future ? ' · 未来日期仅可标记有课或恢复无课' : ''}`,
+                      `${record.student.name} · ${column.key} · ${attendancePeriodLabels[period]}`,
                     )
                   "
                   @blur="closeCell"
@@ -448,9 +440,7 @@ function cellOptions(
                   :title="
                     cellTitle(
                       cellKey(record.student.id, String(column.key), period),
-                      dateMap.get(String(column.key))?.future
-                        ? '未来日期仅可标记有课；已设有课时可取消排课恢复无课'
-                        : '点击修改状态',
+                      '点击修改状态',
                     )
                   "
                   @click="

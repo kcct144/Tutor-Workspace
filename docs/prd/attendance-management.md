@@ -8,15 +8,15 @@
 
 出勤记录是独立的“学生 × 日期 × 时段”数据。页面为 `/attendance`，只支持按月查询和逐格新建或修改；不联动排课、合同、学习计划、任务或学习记录。
 
-本期不包含批量填写、导入导出、请假审批、删除/恢复、自动提醒、报表、负责人权限扩展或真实业务演示数据；仅允许将仍为“有课”的排课记录取消回无课。
+本期不包含批量填写、导入导出、请假审批、自动提醒、报表、负责人权限扩展或真实业务演示数据。单元格可恢复为“无课”，但不提供记录历史、恢复入口或批量删除。
 
 ## 记录与状态
 
 时段固定为 `morning`（上午）、`afternoon`（下午）、`evening`（晚上）；状态固定为 `scheduled`（有课）、`present`（出勤）、`sick_leave`（病假）、`personal_leave`（事假）、`absent`（旷课）。未记录是独立空状态，不默认出勤且不参与统计。
 
-同一学生、日期、时段只能有一条记录。“有课”表示已安排而未形成最终结果。未来 Asia/Shanghai 日期只可标记有课；当天及过去日期可选择全部五种状态。
+同一学生、日期、时段只能有一条记录。“有课”表示已安排而未形成最终结果。过去、当天和未来日期使用完全相同的五种状态选项，服务端不再按日期限制可选状态。
 
-“无课”不作为状态或记录保存：单元格为空即无课。仅当一条现存记录状态仍为“有课”时，用户可以用其当前版本取消排课，服务端在同一事务内删除该排课记录并写审计，单元格恢复为空。已形成的出勤、病假、事假和旷课记录不可清空、删除或恢复。
+“无课”不作为状态或记录保存：单元格为空即无课。“取消排课（恢复无课）”在每个单元格的固定选项中始终显示；空单元格选择它是无副作用操作，已有任意状态时则必须使用当前版本在同一事务内删除记录并写审计。陈旧版本不会覆盖或删除最新记录。
 
 ## 页面
 
@@ -37,6 +37,6 @@
 - `GET /api/attendance/month`：`month` 必填，另支持 `keyword`、`grade`、`gender`、`status`；返回月份、学生、该月记录和总人数。
 - `GET /api/attendance/today-summary`：同月度筛选，另需 `period`（`all` 或固定时段）；返回当天或 `null` 及各状态计数。
 - `PUT /api/attendance/record`：只接受 `studentId`、`attendanceDate`、`period`、`status`、`expectedVersion`。`expectedVersion: null` 创建；已有版本更新；陈旧版本、并发重复创建或已不存在的目标返回明确冲突/不存在错误。
-- `DELETE /api/attendance/record`：只接受 `studentId`、`attendanceDate`、`period`、`expectedVersion`，且仅能取消当前版本仍为 `scheduled` 的记录；成功返回 `{ cleared: true }`。陈旧或不存在记录返回 409，非 `scheduled` 记录返回 400。
+- `DELETE /api/attendance/record`：只接受 `studentId`、`attendanceDate`、`period`、`expectedVersion`，清除当前版本的任意已保存状态；成功返回 `{ cleared: true }`，陈旧或不存在记录返回 409。空单元格由前端直接保持为空，不发送删除请求。
 
 接口统一返回 `{ status, msg, data }`；无会话为 401，写入 CSRF 校验失败为 403。所有日期以服务器 Asia/Shanghai 日期判定，未知字段和非法枚举均拒绝。

@@ -1,5 +1,5 @@
 import { requireActiveAuth } from "../../auth/context";
-import { clearScheduledAttendanceCell } from "../../db/attendance";
+import { clearAttendanceCell } from "../../db/attendance";
 import { parseAttendanceCellClear } from "../../db/attendance-rules";
 import { inTransaction, withDatabase } from "../../db/pool";
 import { apiResponse } from "../../utils/api";
@@ -10,7 +10,7 @@ export default defineEventHandler((event) =>
     const input = parseAttendanceCellClear(await jsonBody(event, 32768));
     return withDatabase(useRuntimeConfig(event).mysql, (db) =>
       inTransaction(db, async () =>
-        clearScheduledAttendanceCell(
+        clearAttendanceCell(
           db,
           input,
           (await requireActiveAuth(db, event)).userId,

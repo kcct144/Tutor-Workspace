@@ -315,11 +315,8 @@ export async function setAttendanceCell(
   return updated;
 }
 
-/**
- * `null` means no class and is represented by no attendance row. To retain
- * attendance history, this narrow delete is available only for `scheduled`.
- */
-export async function clearScheduledAttendanceCell(
+/** `null` means no class and is represented by no attendance row. */
+export async function clearAttendanceCell(
   connection: Connection,
   input: AttendanceCellClear,
   actorId: string,
@@ -332,16 +329,10 @@ export async function clearScheduledAttendanceCell(
     throw error;
   }
   if (before.version !== input.expectedVersion) conflict();
-  if (before.status !== "scheduled")
-    throw new ApiError(
-      400,
-      "VALIDATION_ERROR",
-      "仅“有课”状态可取消排课；已形成的出勤记录不可清空。",
-    );
 
   const result = await executeWrite(
     connection,
-    "DELETE FROM attendance_records WHERE student_id=? AND attendance_date=? AND period=? AND version=? AND status='scheduled'",
+    "DELETE FROM attendance_records WHERE student_id=? AND attendance_date=? AND period=? AND version=?",
     [
       input.studentId,
       input.attendanceDate,
@@ -358,17 +349,11 @@ export async function clearScheduledAttendanceCell(
       throw error;
     }
     if (current.version !== input.expectedVersion) conflict();
-    if (current.status !== "scheduled")
-      throw new ApiError(
-        400,
-        "VALIDATION_ERROR",
-        "仅“有课”状态可取消排课；已形成的出勤记录不可清空。",
-      );
     conflict();
   }
   await writeAuditLog(connection, {
     actorUserId: actorId,
-    action: "attendance_record.cancel_schedule",
+    action: "attendance_record.clear",
     entityType: "attendance_record",
     entityId: before.id,
     studentId: before.studentId,

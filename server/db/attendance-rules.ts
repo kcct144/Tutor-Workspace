@@ -104,7 +104,7 @@ export function parseAttendanceSummaryQuery(
 
 export function parseAttendanceCellWrite(
   body: unknown,
-  today = shanghaiToday(),
+  _today = shanghaiToday(),
 ): AttendanceCellWrite {
   if (!body || typeof body !== "object" || Array.isArray(body))
     invalid("出勤请求须为JSON对象。");
@@ -121,8 +121,6 @@ export function parseAttendanceCellWrite(
   const attendanceDate = dateOnly(input.attendanceDate);
   if (attendanceDate < "1900-01-01") invalid("出勤日期不得早于1900-01-01。");
   const attendanceStatus = status(input.status);
-  if (attendanceDate > today && attendanceStatus !== "scheduled")
-    invalid("未来日期只能标记有课。");
   const expectedVersion =
     input.expectedVersion === null
       ? null
@@ -136,7 +134,7 @@ export function parseAttendanceCellWrite(
   };
 }
 
-/** Only a persisted `scheduled` record may be cleared back to no class. */
+/** Any persisted attendance state may be cleared back to no class. */
 export function parseAttendanceCellClear(body: unknown): AttendanceCellClear {
   if (!body || typeof body !== "object" || Array.isArray(body))
     invalid("取消排课请求须为JSON对象。");

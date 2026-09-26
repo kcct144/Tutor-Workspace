@@ -10,7 +10,7 @@ import type {
 import {
   getAttendanceMonth,
   getAttendanceTodaySummary,
-  clearScheduledAttendanceCell,
+  clearAttendanceCell,
   setAttendanceCell,
 } from "~/services/attendance";
 import { ServiceError } from "~/services/http";
@@ -197,11 +197,7 @@ export function useAttendance() {
     nextStatus: AttendanceStatus,
   ) {
     const key = cellKey(studentId, attendanceDate, period);
-    if (
-      savingKeys.value.has(key) ||
-      (attendanceDate > shanghaiToday() && nextStatus !== "scheduled")
-    )
-      return;
+    if (savingKeys.value.has(key)) return;
     const existing = recordMap.value.get(key);
     if (existing?.status === nextStatus) return;
     const previous = existing ? { ...existing } : undefined;
@@ -285,19 +281,14 @@ export function useAttendance() {
     }
   }
 
-  async function clearScheduled(
+  async function clearAttendance(
     studentId: string,
     attendanceDate: string,
     period: AttendancePeriod,
   ) {
     const key = cellKey(studentId, attendanceDate, period);
     const existing = recordMap.value.get(key);
-    if (
-      savingKeys.value.has(key) ||
-      !existing ||
-      existing.status !== "scheduled"
-    )
-      return;
+    if (savingKeys.value.has(key) || !existing) return;
     const previous = { ...existing };
     records.value = records.value.filter(
       (record) =>
@@ -310,7 +301,7 @@ export function useAttendance() {
     savingKeys.value = new Set(savingKeys.value).add(key);
     cellErrors.value.delete(key);
     try {
-      await clearScheduledAttendanceCell({
+      await clearAttendanceCell({
         studentId,
         attendanceDate,
         period,
@@ -372,7 +363,7 @@ export function useAttendance() {
     refresh,
     resetFilters,
     changeStatus,
-    clearScheduled,
+    clearAttendance,
     cellKey,
   };
 }

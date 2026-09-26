@@ -8,7 +8,7 @@ import {
 } from "../../server/db/attendance-rules";
 import {
   attendanceStudentFilter,
-  clearScheduledAttendanceCell,
+  clearAttendanceCell,
   projectAttendanceRecord,
   setAttendanceCell,
 } from "../../server/db/attendance";
@@ -23,6 +23,7 @@ import type {
   AttendanceCellClear,
   AttendanceCellWrite,
 } from "../../types/api/attendance";
+import { attendanceStatuses } from "../../types/api/attendance";
 
 type StoredAttendance = {
   id: string;
@@ -174,8 +175,7 @@ class MemoryAttendanceConnection {
           entry.studentId === String(studentId) &&
           entry.attendanceDate === String(attendanceDate) &&
           entry.period === String(period) &&
-          entry.version === Number(version) &&
-          entry.status === "scheduled",
+          entry.version === Number(version),
       );
       if (index < 0) return [{ affectedRows: 0 }];
       this.records.splice(index, 1);
@@ -213,7 +213,7 @@ async function clearInMemory(
   input: AttendanceCellClear,
 ) {
   return inTransaction(connection as never, () =>
-    clearScheduledAttendanceCell(connection as never, input, "1"),
+    clearAttendanceCell(connection as never, input, "1"),
   );
 }
 
@@ -226,7 +226,7 @@ const write = {
 };
 
 describe("S10 attendance validation", () => {
-  it("accepts the fixed periods, statuses, and a scheduled future record", () => {
+  it("accepts every fixed status on past, current, and future dates", () => {
     expect(parseAttendanceCellWrite(write, "2026-09-08")).toEqual(write);
     expect(
       parseAttendanceCellWrite(
@@ -240,11 +240,22 @@ describe("S10 attendance validation", () => {
         "2026-09-08",
       ),
     ).toMatchObject({ period: "evening", status: "scheduled" });
+    for (const status of attendanceStatuses)
+      expect(
+        parseAttendanceCellWrite(
+          {
+            ...write,
+            attendanceDate: "2026-09-09",
+            status,
+            expectedVersion: null,
+          },
+          "2026-09-08",
+        ),
+      ).toMatchObject({ attendanceDate: "2026-09-09", status });
   });
 
-  it("rejects invalid, future, stale-field, and malformed filter input", () => {
+  it("rejects invalid, stale-field, and malformed filter input", () => {
     for (const patch of [
-      { attendanceDate: "2026-09-09" },
       { attendanceDate: "1899-12-31" },
       { period: "night" },
       { status: "late" },
@@ -456,7 +467,7 @@ describe("S10 attendance write concurrency and transaction behavior", () => {
     expect(connection.audits).toEqual([]);
   });
 
-  it("cancels only a current scheduled record back to the no-class state", async () => {
+  it("clears a current attendance record back to the no-class state", async () => {
     const connection = new MemoryAttendanceConnection();
     await writeInMemory(connection, { ...cell, status: "scheduled" });
     await expect(
@@ -470,11 +481,11 @@ describe("S10 attendance write concurrency and transaction behavior", () => {
     expect(connection.records).toEqual([]);
     expect(connection.audits.map((audit) => audit.action)).toEqual([
       "attendance_record.create",
-      "attendance_record.cancel_schedule",
+      "attendance_record.clear",
     ]);
   });
 
-  it("rejects cancelling a stale or non-scheduled record without deleting it", async () => {
+  it("clears any saved status and rejects a stale version", async () => {
     const connection = new MemoryAttendanceConnection();
     await writeInMemory(connection, cell);
     await expect(
@@ -484,7 +495,9 @@ describe("S10 attendance write concurrency and transaction behavior", () => {
         period: "morning",
         expectedVersion: 1,
       }),
-    ).rejects.toMatchObject({ statusCode: 400, code: "VALIDATION_ERROR" });
+    ).resolves.toEqual({ cleared: true });
+
+    await writeInMemory(connection, cell);
     await expect(
       clearInMemory(connection, {
         studentId: "1",

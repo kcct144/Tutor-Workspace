@@ -77,7 +77,7 @@ export interface AttendanceCellWrite {
   expectedVersion: number | null;
 }
 
-/** Cancelling a scheduled lesson restores the independent empty (no-class) state. */
+/** Clearing any persisted cell restores the independent empty (no-class) state. */
 export interface AttendanceCellClear {
   studentId: string;
   attendanceDate: string;
